@@ -59,7 +59,8 @@ private:
 
 	void UpdateParticleVB();
 	void UpdateKeyboardInput(float dt);
-	void UpdateCollision();
+
+	void RectRectCollision(BoundingBox r1, BoundingBox r2);
 
 	void DrawParticles();
 
@@ -83,7 +84,7 @@ private:
 
 	Sprite* mBG;
 
-	//bounding boxes for enviroment collision
+	BoundingBox playerBB;
 	BoundingBox bb1;
 	BoundingBox bb2;
 	BoundingBox bb3;
@@ -115,8 +116,6 @@ private:
 	BoundingBox bb29;
 	BoundingBox bb30;
 	BoundingBox bb31;
-
-	
 
 	std::vector<BoundingBox> boxes;
 
@@ -332,11 +331,18 @@ bool InClassProj::Init()
 
 	//result = sys->playSound(sound1, 0, false, &channel);
 
+	InitBoundingBoxes();
+
 	return true;
 }
 
 void InClassProj::InitBoundingBoxes()
 {
+	playerBB.pos.x = mPlayer->GetPos().m128_f32[0];
+	playerBB.pos.y = mPlayer->GetPos().m128_f32[1];
+	playerBB.height = 22.0f;
+	playerBB.width = 16.0;
+
 	bb1.pos = XMFLOAT2(0.0f, 0.0f);
 	bb1.height = 32.0f;
 	bb1.width = 128.0f;
@@ -417,13 +423,13 @@ void InClassProj::InitBoundingBoxes()
 	bb16.width = 160.0f;
 	boxes.push_back(bb16);
 
-	bb17.pos = XMFLOAT2(256.0f, 320.0f);
-	bb17.height = 86.0f;
+	bb17.pos = XMFLOAT2(266.0f, 368.0f);  /////////////////////////////////////////////
+	bb17.height = 96.0f;
 	bb17.width = 96.0f;
 	boxes.push_back(bb17);
 
 	bb18.pos = XMFLOAT2(672.0f, 320.0f);
-	bb18.height = 86.0f;
+	bb18.height = 96.0f;
 	bb18.width = 96.0f;
 	boxes.push_back(bb18);
 
@@ -482,7 +488,7 @@ void InClassProj::InitBoundingBoxes()
 	bb29.width = 18.0f;
 	boxes.push_back(bb29);
 
-	bb30.pos = XMFLOAT2(736.0f,626.0f);
+	bb30.pos = XMFLOAT2(736.0f, 626.0f);
 	bb30.height = 288.0f;
 	bb30.width = 110.0f;
 	boxes.push_back(bb30);
@@ -603,14 +609,58 @@ void InClassProj::OnResize()
 	XMStoreFloat4x4(&m2DProj, P);
 }
 
-void InClassProj::UpdateCollision()
+void InClassProj::RectRectCollision(BoundingBox r1, BoundingBox r2)
 {
+	float r1CentreX = r1.pos.x + r1.width / 2;
+	float r1CentreY = r1.pos.y + r1.height / 2;
 
+	float r2CentreX = r2.pos.x + r2.width / 2;
+	float r2CentreY = r2.pos.y + r2.height / 2;
+
+	float diffX = r1CentreX - r2CentreX;
+	float diffY = r1CentreY - r2CentreY;
+	float halfWidths = (r1.width + r2.width) / 2;
+	float halfHeights = (r1.height + r2.height) / 2;
+
+	float overlapX = halfWidths - abs(diffX);
+	float overlapY = halfHeights - abs(diffY);
+
+	if (overlapX > 0 && overlapY > 0)
+	{
+		//check to see which axis to correct on (smallest overlap)
+		if (overlapX > overlapY)
+		{
+			//correct on y
+			if (r1CentreY < r2CentreY)
+			{
+				mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - overlapY, 0.0f, 0.0f));
+			}
+			else
+			{
+				mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] + overlapY, 0.0f, 0.0f));
+			}
+		}
+		else
+		{
+			//correct on x
+			if (r1CentreX < r2CentreX)
+			{
+				mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] - overlapX, mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f));
+			}
+			else
+			{
+				mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] + overlapX, mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f));
+			}
+		}
+	}
 }
 
 //float timer = 0.0f;
 void InClassProj::UpdateScene(float dt)
 {
+	playerBB.pos.x = mPlayer->GetPos().m128_f32[0];
+	playerBB.pos.y = mPlayer->GetPos().m128_f32[1];
+
 	UpdateKeyboardInput(dt);
 	
 	m2DCam->Update();
@@ -636,9 +686,15 @@ void InClassProj::UpdateScene(float dt)
 	}
 
 	UpdateParticleVB();
-	UpdateCollision();
 
-	//mBG->Update(dt);
+
+
+//testing:
+	//for (int i = 0; i < boxes.size(); ++i)
+	//{
+		RectRectCollision(playerBB, /*boxes[i]*/bb17);
+	//}
+
 	mPlayer->Update(dt);
 
 	sys->update();
@@ -759,15 +815,29 @@ void InClassProj::UpdateKeyboardInput(float dt)
 		x = dt * 150;
 		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] + x, mPlayer->GetPos().m128_f32[1], mPlayer->GetPos().m128_f32[2], 0.0f));
 	}
+
 	if (GetAsyncKeyState(VK_UP) & 0x8000)
 	{
 		//jump
-		
+
+		//temp code:
+		float y = 0.0f;
+		y = dt * 150;
+		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] + y, mPlayer->GetPos().m128_f32[2], 0.0f));
 	}
+	if (GetAsyncKeyState(VK_DOWN) & 0x8000)
+	{
+		//temp code:
+		float y = 0.0f;
+		y = dt * 150;
+		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - y, mPlayer->GetPos().m128_f32[2], 0.0f));
+	}
+
 	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000)
 	{
 		//jetpack
 	}
+
 	if (GetAsyncKeyState(VK_SPACE) & 0x8000)
 	{
 		//shoot arrows
