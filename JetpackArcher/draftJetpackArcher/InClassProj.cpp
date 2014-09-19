@@ -83,8 +83,40 @@ private:
 
 	Sprite* mBG;
 
+	//bounding boxes for enviroment collision
 	BoundingBox bb1;
-	//BoundingBox bb2;
+	BoundingBox bb2;
+	BoundingBox bb3;
+	BoundingBox bb4;
+	BoundingBox bb5;
+	BoundingBox bb6;
+	BoundingBox bb7;
+	BoundingBox bb8;
+	BoundingBox bb9;
+	BoundingBox bb10;
+	BoundingBox bb11;
+	BoundingBox bb12;
+	BoundingBox bb13;
+	BoundingBox bb14;
+	BoundingBox bb15;
+	BoundingBox bb16;
+	BoundingBox bb17;
+	BoundingBox bb18;
+	BoundingBox bb19;
+	BoundingBox bb20;
+	BoundingBox bb21;
+	BoundingBox bb22;
+	BoundingBox bb23;
+	BoundingBox bb24;
+	BoundingBox bb25;
+	BoundingBox bb26;
+	BoundingBox bb27;
+	BoundingBox bb28;
+	BoundingBox bb29;
+	BoundingBox bb30;
+	BoundingBox bb31;
+
+	
 
 	std::vector<BoundingBox> boxes;
 
@@ -310,7 +342,155 @@ void InClassProj::InitBoundingBoxes()
 	bb1.width = 128.0f;
 	boxes.push_back(bb1);
 
-	//bb2
+	bb2.pos = XMFLOAT2(128.0f, 0.0f);
+	bb2.height = 768.0f;
+	bb2.width = 32.0f;
+	boxes.push_back(bb2);
+
+	bb3.pos = XMFLOAT2(896.0f, 0.0f);
+	bb3.height = 128.0f;
+	bb3.width = 64.0f;
+	boxes.push_back(bb3);
+
+	bb4.pos = XMFLOAT2(960.0f, 64.0f);
+	bb4.height = 64.0f;
+	bb4.width = 32.0f;
+	boxes.push_back(bb4);
+
+	bb5.pos = XMFLOAT2(0.0f, 128.0f);
+	bb5.height = 32.0f;
+	bb5.width = 128.0f;
+	boxes.push_back(bb5);
+
+	bb6.pos = XMFLOAT2(0.0f, 96.0f);
+	bb6.height = 32.0f;
+	bb6.width = 128.0f;
+	boxes.push_back(bb6);
+
+	bb7.pos = XMFLOAT2(992.0f, 96.0f);
+	bb7.height = 32.0f;
+	bb7.width = 128.0f;
+	boxes.push_back(bb7);
+
+	bb8.pos = XMFLOAT2(224.0f, 128.0f);
+	bb8.height = 64.0f;
+	bb8.width = 18.0f;
+	boxes.push_back(bb8);
+
+	bb9.pos = XMFLOAT2(736.0f, 128.0f);
+	bb9.height = 64.0f;
+	bb9.width = 18.0f;
+	boxes.push_back(bb9);
+
+	bb10.pos = XMFLOAT2(416.0f, 160.0f);
+	bb10.height = 192.0f;
+	bb10.width = 18.0f;
+	boxes.push_back(bb10);
+
+	bb11.pos = XMFLOAT2(448.0f, 177.0f);
+	bb11.height = 128.0f;
+	bb11.width = 47.0f;
+	boxes.push_back(bb11);
+
+	bb12.pos = XMFLOAT2(0.0f, 224.0f);
+	bb12.height = 192.0f;
+	bb12.width = 18.0f;
+	boxes.push_back(bb12);
+
+	bb13.pos = XMFLOAT2(0.0f, 241.0f);
+	bb13.height = 128.0f;
+	bb13.width = 47.0f;
+	boxes.push_back(bb13);
+
+	bb14.pos = XMFLOAT2(832.0f, 224.0f);
+	bb14.height = 192.0f;
+	bb14.width = 18.0f;
+	boxes.push_back(bb14);
+
+	bb15.pos = XMFLOAT2(896.0f, 140.0f);
+	bb15.height = 128.0f;
+	bb15.width = 47.0f;
+	boxes.push_back(bb15);
+
+	bb16.pos = XMFLOAT2(0.0f, 288.0f);
+	bb16.height = 32.0f;
+	bb16.width = 160.0f;
+	boxes.push_back(bb16);
+
+	bb17.pos = XMFLOAT2(256.0f, 320.0f);
+	bb17.height = 86.0f;
+	bb17.width = 96.0f;
+	boxes.push_back(bb17);
+
+	bb18.pos = XMFLOAT2(672.0f, 320.0f);
+	bb18.height = 86.0f;
+	bb18.width = 96.0f;
+	boxes.push_back(bb18);
+
+	bb19.pos = XMFLOAT2(992.0f, 288.0f);
+	bb19.height = 32.0f;
+	bb19.width = 116.0f;
+	boxes.push_back(bb19);
+
+	bb20.pos = XMFLOAT2(0.0f, 448.0f);
+	bb20.height = 96.0f;
+	bb20.width = 96.0f;
+	boxes.push_back(bb20);
+
+	bb21.pos = XMFLOAT2(480.0f, 448.0f);
+	bb21.height = 64.0f;
+	bb21.width = 64.0f;
+	boxes.push_back(bb21);
+
+	bb22.pos = XMFLOAT2(928.0f, 448.0f);
+	bb22.height = 96.0f;
+	bb22.width = 96.0f;
+	boxes.push_back(bb22);
+
+	bb23.pos = XMFLOAT2(0.0f, 544.0f);
+	bb23.height = 128.0f;
+	bb23.width = 64.0f;
+	boxes.push_back(bb23);
+
+	bb24.pos = XMFLOAT2(448.0f, 512.0f);
+	bb24.height = 128.0f;
+	bb24.width = 52.0f;
+	boxes.push_back(bb24);
+
+	bb25.pos = XMFLOAT2(896.0f, 544.0f);
+	bb25.height = 128.0f;
+	bb25.width = 64.0f;
+	boxes.push_back(bb25);
+
+	bb26.pos = XMFLOAT2(480.0f, 563.0f);
+	bb26.height = 64.0f;
+	bb26.width = 45.0f;
+	boxes.push_back(bb26);
+
+	bb27.pos = XMFLOAT2(0.0f, 608.0f);
+	bb27.height = 320.0f;
+	bb27.width = 18.0f;
+	boxes.push_back(bb27);
+
+	bb28.pos = XMFLOAT2(0.0f, 626.0f);
+	bb28.height = 288.0f;
+	bb28.width = 110.0f;
+	boxes.push_back(bb28);
+
+	bb29.pos = XMFLOAT2(704.0f, 608.0f);
+	bb29.height = 320.0f;
+	bb29.width = 18.0f;
+	boxes.push_back(bb29);
+
+	bb30.pos = XMFLOAT2(736.0f,626.0f);
+	bb30.height = 288.0f;
+	bb30.width = 110.0f;
+	boxes.push_back(bb30);
+
+	bb31.pos = XMFLOAT2(0.0f, 736.0f);
+	bb31.height = 1024.0f;
+	bb31.width = 32.0f;
+	boxes.push_back(bb31);
 }
 
 void InClassProj::BuildBlendStates()
