@@ -1,20 +1,16 @@
 #include "Sprite.h"
-
 #include "Vertex.h"
 
-
-Sprite::Sprite(FXMVECTOR pos2D, FXMVECTOR scale2D,
-	uint16_t frameWidth, uint16_t frameHeight,
-	float depth, const std::vector<Frame*>& frames,
-	float frameRate, ID3D11Device* device) :
-	mFrameWidth(frameWidth),
-	mFrameHeight(frameHeight),
-	mDepth(depth),
-	mFrames(frames),
-	mFrameRate(frameRate),
-	mFrameIndex(0),
-	mAngle(0),
-	mCurrFrameTime(0.0f)
+Sprite::Sprite(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t frameHeight,
+	float depth, const std::vector<Frame*>& frames, float frameRate, ID3D11Device* device) :
+		mFrameWidth(frameWidth),
+		mFrameHeight(frameHeight),
+		mDepth(depth),
+		mFrames(frames),
+		mFrameRate(frameRate),
+		mFrameIndex(0),
+		mAngle(0),
+		mCurrFrameTime(0.0f)
 {
 	XMStoreFloat2(&mPos, pos2D);
 	XMStoreFloat2(&mScale, scale2D);
@@ -22,7 +18,6 @@ Sprite::Sprite(FXMVECTOR pos2D, FXMVECTOR scale2D,
 	InitVB(device);
 	InitIB(device);
 }
-
 
 Sprite::~Sprite()
 {
@@ -85,6 +80,7 @@ void Sprite::InitVB(ID3D11Device* device)
 	vinitData.pSysMem = &vertices[0];
 	HR(device->CreateBuffer(&vbd, &vinitData, &mVB));
 }
+
 void Sprite::InitIB(ID3D11Device* device)
 {
 	std::vector<UINT> indices(mFrames.size() * 6);
@@ -112,7 +108,6 @@ void Sprite::InitIB(ID3D11Device* device)
 	D3D11_SUBRESOURCE_DATA iinitData;
 	iinitData.pSysMem = &indices[0];
 	HR(device->CreateBuffer(&ibd, &iinitData, &mIB));
-
 }
 
 XMMATRIX Sprite::GetWorld()
@@ -152,9 +147,7 @@ void Sprite::Update(float dt)
 	}
 }
 
-void Sprite::Draw(CXMMATRIX vp,
-	ID3D11DeviceContext* context,
-	LitTexEffect* litTexEffect)
+void Sprite::Draw(CXMMATRIX vp, ID3D11DeviceContext* context, LitTexEffect* litTexEffect)
 {
 	UINT offset = 0;
 	UINT stride = sizeof(Vertex::NormalTexVertex);
@@ -165,7 +158,6 @@ void Sprite::Draw(CXMMATRIX vp,
 	XMMATRIX invWorld = MathHelper::InverseTranspose(world);
 	context->IASetVertexBuffers(0, 1, &mVB, &stride, &offset);
 	context->IASetIndexBuffer(mIB, DXGI_FORMAT_R32_UINT, 0);
-	litTexEffect->SetPerObjectParams(world, invWorld,
-		wvp, mFrames[mFrameIndex]->image);
+	litTexEffect->SetPerObjectParams(world, invWorld, wvp, mFrames[mFrameIndex]->image);
 	litTexEffect->Draw(context, mVB, mIB, mFrameIndex * 6, 6);
 }

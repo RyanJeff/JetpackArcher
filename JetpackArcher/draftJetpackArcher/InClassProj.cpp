@@ -7,12 +7,22 @@
 #include <vector>
 #include "Vertex.h"
 #include "GraphicalObject.h"
+#include "Player.h"
 #include "Projectile.h"
 #include "Effect.h"
 #include "FontRasterizer.h"
 #include "Sprite.h"
 #include "xnacollision.h"
-//#include "fmod.hpp"
+#include "fmod.hpp"
+
+
+struct BoundingBox
+{
+	XMFLOAT2 pos;
+	float width;
+	float height;
+	BoundingBox() : pos(0.0f, 0.0f), width(0.0f), height(0.0f) {}
+};
 
 struct TestParticle
 {
@@ -33,6 +43,8 @@ public:
 	void OnResize();
 	void UpdateScene(float dt);
 	void DrawScene(); 
+
+	void InitBoundingBoxes();
 
 	void OnMouseDown(WPARAM btnState, int x, int y);
 	void OnMouseUp(WPARAM btnState, int x, int y);
@@ -71,6 +83,11 @@ private:
 
 	Sprite* mBG;
 
+	BoundingBox bb1;
+	//BoundingBox bb2;
+
+	std::vector<BoundingBox> boxes;
+
 	std::vector<Projectile*> mProjectiles;
 
 	std::vector<TestParticle> mParticles;
@@ -101,7 +118,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
 	return theApp.Run();
 }
-
 
 InClassProj::InClassProj(HINSTANCE hInstance) : 
 	D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0), mBG(0)
@@ -180,36 +196,29 @@ void InClassProj::BuildSceneLights()
 	mAmbientColour = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
-/* FMOD_RESULT result;
+FMOD_RESULT result;
 FMOD::System     *sys;
 FMOD::Sound      *sound1, *sound2, *sound3;
 FMOD::Channel    *channel = 0;
 unsigned int      version;
 void             *extradriverdata = 0;
-*/
+
 
 bool InClassProj::Init()
 {
 	if(!D3DApp::Init())
 		return false;
 
-	/*
-	Create a System object and initialize
-	*/
-	/*result = FMOD::System_Create(&sys);
-
+	//FMOD sounds
+	result = FMOD::System_Create(&sys);
 	result = sys->getVersion(&version);
-
 	if (version < FMOD_VERSION)
 	{
 		OutputDebugString(L"FMOD lib version doesn't match header version");
 	}
-
 	result = sys->init(32, FMOD_INIT_NORMAL, extradriverdata);
-
-	result = sys->createSound("Sounds/drumloop.wav", FMOD_DEFAULT, 0, &sound1);
-	*/
-	//result = sound1->setMode(FMOD_LOOP_OFF);
+	result = sys->createSound("Sounds/thunder.ogg", FMOD_DEFAULT, 0, &sound1);  //fire arrow sfx
+	result = sound1->setMode(FMOD_LOOP_OFF);
 
  	mLitTexEffect = new LitTexEffect();
 	mLitTexEffect->LoadEffect(L"FX/lighting.fx", md3dDevice);
@@ -219,12 +228,8 @@ bool InClassProj::Init()
 
 	Vertex::InitLitTexLayout(md3dDevice, mLitTexEffect->GetTech());
 
-	XMVECTOR pos = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-	XMVECTOR look = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
+	//camera
 	m2DCam = new BaseCamera(XMVectorSet(0.0f, 0.0f, -0.5f, 0.0f), XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
-	
 	m2DCam->Update();
 
 	BuildSceneLights();
@@ -238,15 +243,16 @@ bool InClassProj::Init()
 	BuildBlendStates();
 	BuildDSStates();
 
+	//font
 	ID3D11ShaderResourceView* font;
 	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/font.png", 0, 0, &font, 0);
-
 	mFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
 
+	//bg image
 	Sprite::Frame* BGFrame = new Sprite::Frame();
 	ID3D11ShaderResourceView* BGimage;
 	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/TFAbgTiled.png", 0, 0, &BGimage, 0);
-
+	//bg frame
 	BGFrame->imageWidth = 1024;
 	BGFrame->imageHeight = 768;
 	BGFrame->x = 0;
@@ -255,10 +261,11 @@ bool InClassProj::Init()
 	std::vector<Sprite::Frame*> bgFrame;
 	bgFrame.push_back(BGFrame);
 
+	//spritesheet
 	Sprite::Frame* newFrame = new Sprite::Frame();
 	ID3D11ShaderResourceView* image;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/player.png", 0, 0, &image, 0);
-
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/player.png", 0, 0, &image, 0);  //test
+	//player frame1
 	newFrame->imageWidth = 96;
 	newFrame->imageHeight = 96;
 	newFrame->x = 0;
@@ -266,7 +273,7 @@ bool InClassProj::Init()
 	newFrame->image = image;
 	std::vector<Sprite::Frame*> frames;
 	frames.push_back(newFrame);
-
+	//player frame2
 	newFrame = new Sprite::Frame();
 	newFrame->imageWidth = 96;
 	newFrame->imageHeight = 96;
@@ -274,7 +281,7 @@ bool InClassProj::Init()
 	newFrame->y = 0;
 	newFrame->image = image;
 	frames.push_back(newFrame);
-
+	//player frame3
 	newFrame = new Sprite::Frame();
 	newFrame->imageWidth = 96;
 	newFrame->imageHeight = 96;
@@ -283,17 +290,27 @@ bool InClassProj::Init()
 	newFrame->image = image;
 	frames.push_back(newFrame);
 
-	mPlayer = new Sprite(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-						 32, 32, 0.1f, frames, 0.25f, md3dDevice);
-
 	mBG = new Sprite(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
 					 1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice);
 
+	mPlayer = new Sprite(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+						 32, 32, 0.1f, frames, 0.25f, md3dDevice);
+
 	mPlayer->Play(true);
 
-	//result = sys->playSound(sound1, 0, false, &channel);
+	//result = sys->playSound(sound1, 0, false, &channel);  //play bg music(make sound2) on init
 
 	return true;
+}
+
+void InClassProj::InitBoundingBoxes()
+{
+	bb1.pos = XMFLOAT2(0.0f, 0.0f);   //ask rob if 2 is ok or use 3 and z is 0
+	bb1.height = 32.0f;
+	bb1.width = 128.0f;
+	boxes.push_back(bb1);
+
+	//bb2
 }
 
 void InClassProj::BuildBlendStates()
@@ -441,11 +458,10 @@ void InClassProj::UpdateScene(float dt)
 	UpdateParticleVB();
 	UpdateCollision();
 
+	//mBG->Update(dt);
 	mPlayer->Update(dt);
 
-	mBG->Update(dt);
-
-	//sys->update();
+	sys->update();
 }
 
 void InClassProj::DrawScene()
@@ -514,18 +530,17 @@ void InClassProj::OnMouseDown(WPARAM btnState, int x, int y)
 	{
 		//Projectile* newProjectile = new Projectile(mTestPlayer->GetLook() * 200.0f, mTestPlayer->GetPos() + mTestPlayer->GetUp() * 2.0f,
 			//mTestPlayer->GetLook(), mTestPlayer->GetUp(), 1.0f, *mBarnProjectile);
-
 		//mProjectiles.push_back(newProjectile);
 	}
 
 	if ((btnState & MK_LBUTTON) != 0)
 	{
-		/*TestParticle newParticle;
-		XMStoreFloat3(&newParticle.pos, mTestPlayer->GetPos() + XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
-		XMStoreFloat3(&newParticle.vel, mTestPlayer->GetLook() * 0.1f);
-		newParticle.size.x = 2.0f;
-		newParticle.size.y = 2.0f;
-		mParticles.push_back(newParticle);*/
+		//TestParticle newParticle;
+		//XMStoreFloat3(&newParticle.pos, mPlayer->GetPos() + XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
+		//XMStoreFloat3(&newParticle.vel, mPlayer->GetLook() * 0.1f);
+		//newParticle.size.x = 2.0f;
+		//newParticle.size.y = 2.0f;
+		//mParticles.push_back(newParticle);
 	}
 
 	SetCapture(mhMainWnd);	 
@@ -550,40 +565,39 @@ void InClassProj::OnMouseMove(WPARAM btnState, int x, int y)
 
 void InClassProj::UpdateKeyboardInput(float dt)
 {
-	if( GetAsyncKeyState('W') & 0x8000)
-	{
-		/*bool isPlaying = false;
-		channel->isPlaying(&isPlaying);
-		if(!isPlaying)
-		{
-			result = sys->playSound(sound1, 0, false, &channel);
-		}*/
-		if(GetAsyncKeyState(VK_LSHIFT) & 0x8000)
-		{
-			//mTestPlayer->MoveLook(mTestPlayer->GetSprintSpeed() * dt);
-		}
-		else
-		{
-			//mTestPlayer->MoveLook(mTestPlayer->GetSpeed() * dt);
-		}
-	}
-	if (GetAsyncKeyState('S') & 0x8000)
-	{
-		//mTestPlayer->MoveLook(-mTestPlayer->GetSpeed()*dt);
-
-	}
 	if (GetAsyncKeyState(VK_LEFT) & 0x8000)
 	{
-		//mTestPlayer->MoveStrafe(-mTestPlayer->GetSpeed()*dt);
-
+		//temp code:
+		float x = 0.0f;
+		x = dt * 150;
+		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] - x, mPlayer->GetPos().m128_f32[1], mPlayer->GetPos().m128_f32[2], 0.0f));
 	}
 	if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
 	{
-		//mTestPlayer->MoveStrafe(mTestPlayer->GetSpeed()*dt);
+		//temp code:
+		float x = 0.0f;
+		x = dt * 150;
+		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] + x, mPlayer->GetPos().m128_f32[1], mPlayer->GetPos().m128_f32[2], 0.0f));
+	}
+	if( GetAsyncKeyState(VK_UP) & 0x8000)
+	{
+		//jump
+		
+	}
+	if(GetAsyncKeyState(VK_LSHIFT) & 0x8000)
+	{
+		//jetpack
 	}
 	if (GetAsyncKeyState(VK_SPACE) & 0x8000)
 	{
-		//mTestPlayer->Jump();
+		//shoot arrows
+
+		bool isPlaying = false;
+		channel->isPlaying(&isPlaying);
+		if (!isPlaying)
+		{
+			result = sys->playSound(sound1, 0, false, &channel);
+		}
 	}
 }
 

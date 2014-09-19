@@ -9,18 +9,18 @@ public:
 	struct Frame
 	{
 		ID3D11ShaderResourceView* image;
-		uint16_t x; //frame x location in pixels
-		uint16_t y; //frame y location in pixels
+		uint16_t x;   //frame x location in pixels
+		uint16_t y;   //frame y location in pixels
 
 		uint16_t imageWidth;
 		uint16_t imageHeight;
 	};
 
 public:
-	Sprite(FXMVECTOR pos2D, FXMVECTOR scale2D,
-		   uint16_t frameWidth, uint16_t frameHeight,
-		   float depth, const std::vector<Frame*>& frames,
-		   float frameRate, ID3D11Device* device);
+	Sprite(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t frameHeight,
+		   float depth, const std::vector<Frame*>& frames, float frameRate, ID3D11Device* device);
+
+	Sprite::Sprite();
 
 	virtual ~Sprite();
 
@@ -103,9 +103,7 @@ public:
 		mAngle += angle;
 	}
 
-	void Draw(CXMMATRIX vp,
-		ID3D11DeviceContext* context,
-		LitTexEffect* litTexEffect);
+	void Draw(CXMMATRIX vp, ID3D11DeviceContext* context, LitTexEffect* litTexEffect);
 
 	void Update(float dt);
 
@@ -120,13 +118,11 @@ protected:
 	bool mLoop;
 	bool mPlaying;
 	uint16_t mFrameIndex;
-	float mAngle; //in radians
+	float mAngle;   //in radians
 	float mCurrFrameTime;
 
 	virtual void InitVB(ID3D11Device* device);
 	virtual void InitIB(ID3D11Device* device);
 
 	XMMATRIX GetWorld();
-
 };
-
