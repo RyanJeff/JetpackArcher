@@ -298,14 +298,14 @@ bool InClassProj::Init()
 
 	mPlayer->Play(true);
 
-	//result = sys->playSound(sound1, 0, false, &channel);  //play bg music(make sound2) on init
+	//result = sys->playSound(sound1, 0, false, &channel);
 
 	return true;
 }
 
 void InClassProj::InitBoundingBoxes()
 {
-	bb1.pos = XMFLOAT2(0.0f, 0.0f);   //ask rob if 2 is ok or use 3 and z is 0
+	bb1.pos = XMFLOAT2(0.0f, 0.0f);
 	bb1.height = 32.0f;
 	bb1.width = 128.0f;
 	boxes.push_back(bb1);
@@ -579,12 +579,12 @@ void InClassProj::UpdateKeyboardInput(float dt)
 		x = dt * 150;
 		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] + x, mPlayer->GetPos().m128_f32[1], mPlayer->GetPos().m128_f32[2], 0.0f));
 	}
-	if( GetAsyncKeyState(VK_UP) & 0x8000)
+	if (GetAsyncKeyState(VK_UP) & 0x8000)
 	{
 		//jump
 		
 	}
-	if(GetAsyncKeyState(VK_LSHIFT) & 0x8000)
+	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000)
 	{
 		//jetpack
 	}
