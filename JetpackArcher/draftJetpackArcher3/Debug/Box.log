@@ -1,6 +1,86 @@
 ﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(381,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (Box.vcxproj, InClassProj.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  fxc compile for debug: C:\Users\Nicole\Documents\GitHub\JetpackArcher\JetpackArcher\draftJetpackArcher3\FX\lighting.fx
+  Microsoft (R) Direct3D Shader Compiler 6.3.9600.16384
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+CUSTOMBUILD : warning X4717: Effects deprecated for D3DCompiler_47
+  
+  compilation code save succeeded; see lighting.cod
+  compilation object save succeeded; see C:\Users\Nicole\Documents\GitHub\JetpackArcher\JetpackArcher\draftJetpackArcher3\FX\lighting.fxo
+  fxc compile for debug: C:\Users\Nicole\Documents\GitHub\JetpackArcher\JetpackArcher\draftJetpackArcher3\FX\terrain.fx
+  Microsoft (R) Direct3D Shader Compiler 6.3.9600.16384
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+CUSTOMBUILD : warning X4717: Effects deprecated for D3DCompiler_47
+  
+  compilation code save succeeded; see terrain.cod
+  compilation object save succeeded; see C:\Users\Nicole\Documents\GitHub\JetpackArcher\JetpackArcher\draftJetpackArcher3\FX\terrain.fxo
+  fxc compile for debug: C:\Users\Nicole\Documents\GitHub\JetpackArcher\JetpackArcher\draftJetpackArcher3\FX\Sky.fx
+  Microsoft (R) Direct3D Shader Compiler 6.3.9600.16384
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+CUSTOMBUILD : warning X4717: Effects deprecated for D3DCompiler_47
+  
+  compilation code save succeeded; see Sky.cod
+  compilation object save succeeded; see C:\Users\Nicole\Documents\GitHub\JetpackArcher\JetpackArcher\draftJetpackArcher3\FX\Sky.fxo
+  fxc compile for debug: C:\Users\Nicole\Documents\GitHub\JetpackArcher\JetpackArcher\draftJetpackArcher3\FX\Particles.fx
+  Microsoft (R) Direct3D Shader Compiler 6.3.9600.16384
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+CUSTOMBUILD : warning X4717: Effects deprecated for D3DCompiler_47
+  
+  compilation code save succeeded; see Particles.cod
+  compilation object save succeeded; see C:\Users\Nicole\Documents\GitHub\JetpackArcher\JetpackArcher\draftJetpackArcher3\FX\Particles.fxo
+  fxc compile for debug: C:\Users\Nicole\Documents\GitHub\JetpackArcher\JetpackArcher\draftJetpackArcher3\FX\ParticleEffect.fx
+  Microsoft (R) Direct3D Shader Compiler 6.3.9600.16384
+  Copyright (C) 2013 Microsoft. All rights reserved.
+  
+CUSTOMBUILD : warning X4717: Effects deprecated for D3DCompiler_47
+  
+  compilation code save succeeded; see ParticleEffect.cod
+  compilation object save succeeded; see C:\Users\Nicole\Documents\GitHub\JetpackArcher\JetpackArcher\draftJetpackArcher3\FX\ParticleEffect.fxo
+  xnacollision.cpp
+  Vertex.cpp
   Sprite.cpp
-c:\users\nicole\documents\visual studio 2013\projects\draftjetpackarcher3\sprite.cpp(26): warning C4018: '<' : signed/unsigned mismatch
-c:\users\nicole\documents\visual studio 2013\projects\draftjetpackarcher3\sprite.cpp(54): warning C4018: '<' : signed/unsigned mismatch
-c:\users\nicole\documents\visual studio 2013\projects\draftjetpackarcher3\sprite.cpp(96): warning C4018: '<' : signed/unsigned mismatch
-  Box.vcxproj -> C:\Users\Nicole\Documents\Visual Studio 2013\Projects\draftJetpackArcher3\Debug\JetpackArcher.exe
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\sprite.cpp(54): warning C4018: '<' : signed/unsigned mismatch
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\sprite.cpp(96): warning C4018: '<' : signed/unsigned mismatch
+  Projectile.cpp
+  Player.cpp
+  OBJLoader.cpp
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\objloader.cpp(77): warning C4018: '<' : signed/unsigned mismatch
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\objloader.cpp(191): warning C4018: '<' : signed/unsigned mismatch
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\objloader.cpp(203): warning C4018: '<' : signed/unsigned mismatch
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\objloader.cpp(285): warning C4018: '<' : signed/unsigned mismatch
+  MeshGeometry.cpp
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\meshgeometry.cpp(9): warning C4018: '<' : signed/unsigned mismatch
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\meshgeometry.cpp(70): warning C4018: '<' : signed/unsigned mismatch
+  InClassProj.cpp
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\inclassproj.cpp(342): warning C4244: 'argument' : conversion from 'float' to 'uint16_t', possible loss of data
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\inclassproj.cpp(625): warning C4244: 'argument' : conversion from 'int' to 'FLOAT', possible loss of data
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\inclassproj.cpp(688): warning C4018: '<' : signed/unsigned mismatch
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\inclassproj.cpp(700): warning C4018: '<' : signed/unsigned mismatch
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\inclassproj.cpp(713): warning C4018: '<' : signed/unsigned mismatch
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\inclassproj.cpp(767): warning C4018: '<' : signed/unsigned mismatch
+  GraphicalObject.cpp
+  GraphicalGeometry.cpp
+  FPSCamera.cpp
+  FontRasterizer.cpp
+c:\users\nicole\documents\github\jetpackarcher\jetpackarcher\draftjetpackarcher3\fontrasterizer.cpp(76): warning C4018: '<' : signed/unsigned mismatch
+  Effect.cpp
+  BasicModel.cpp
+  BaseCamera.cpp
+  MathHelper.cpp
+c1xx : fatal error C1083: Cannot open source file: '..\..\Common\MathHelper.cpp': No such file or directory
+  GeometryGenerator.cpp
+c1xx : fatal error C1083: Cannot open source file: '..\..\Common\GeometryGenerator.cpp': No such file or directory
+  GameTimer.cpp
+c1xx : fatal error C1083: Cannot open source file: '..\..\Common\GameTimer.cpp': No such file or directory
+  d3dUtil.cpp
+c1xx : fatal error C1083: Cannot open source file: '..\..\Common\d3dUtil.cpp': No such file or directory
+  d3dApp.cpp
+c1xx : fatal error C1083: Cannot open source file: '..\..\Common\d3dApp.cpp': No such file or directory
+  Generating Code...
+  Compiling...
+  LightHelper.cpp
+c1xx : fatal error C1083: Cannot open source file: '..\..\..\..\..\..\VGDDX\DVD - Introduction To 3D Game Programming With DirectX 11\DVD\Code\Common\LightHelper.cpp': No such file or directory
+  Generating Code...
