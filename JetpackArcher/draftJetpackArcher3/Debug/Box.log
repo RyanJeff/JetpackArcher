@@ -1,0 +1,6 @@
+﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(381,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (Box.vcxproj, InClassProj.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  Sprite.cpp
+c:\users\nicole\documents\visual studio 2013\projects\draftjetpackarcher3\sprite.cpp(26): warning C4018: '<' : signed/unsigned mismatch
+c:\users\nicole\documents\visual studio 2013\projects\draftjetpackarcher3\sprite.cpp(54): warning C4018: '<' : signed/unsigned mismatch
+c:\users\nicole\documents\visual studio 2013\projects\draftjetpackarcher3\sprite.cpp(96): warning C4018: '<' : signed/unsigned mismatch
+  Box.vcxproj -> C:\Users\Nicole\Documents\Visual Studio 2013\Projects\draftJetpackArcher3\Debug\JetpackArcher.exe
