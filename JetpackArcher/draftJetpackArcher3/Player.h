@@ -13,7 +13,7 @@ public:
 	Player(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t frameHeight, float depth, const std::vector<Frame*>& frames,
 		float frameRate, ID3D11Device* device) :
 			Sprite(pos2D, scale2D, frameWidth, frameHeight, depth, frames, frameRate, device),
-			JUMP_FORCE(560.0f)
+			JUMP_FORCE(405.0f)
 	{
 	}
 
