@@ -84,6 +84,8 @@ private:
 
 	Player* mPlayer;
 	Enemy* mEnemy1;
+	Enemy* mEnemy2;
+	Enemy* mEnemy3;
 
 	BoundingBox playerBB;
 
@@ -194,6 +196,12 @@ InClassProj::~InClassProj()
 
 	if (mEnemy1)
 		delete mEnemy1;
+
+	if (mEnemy2)
+		delete mEnemy2;
+
+	if (mEnemy3)
+		delete mEnemy3;
 
 	if (mBG)
 		delete mBG;
@@ -345,36 +353,100 @@ bool InClassProj::Init()
 	frames.push_back(newFrame);
 
 	//Enemy 1 spritesheet image
-	Sprite::Frame* enemyFrame = new Sprite::Frame();
-	ID3D11ShaderResourceView* enemyImage;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/SpriteStrip.png", 0, 0, &enemyImage, 0);  //test
+	Sprite::Frame* enemyFrame1 = new Sprite::Frame();
+	ID3D11ShaderResourceView* enemyImage1;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip1.png", 0, 0, &enemyImage1, 0);  //test
 	//Enemy 1 frame1
-	enemyFrame->imageWidth = 96;
-	enemyFrame->imageHeight = 96;
-	enemyFrame->x = 0;
-	enemyFrame->y = 0;
-	enemyFrame->image = enemyImage;
-	std::vector<Sprite::Frame*> enemyframes;
-	enemyframes.push_back(enemyFrame);
+	enemyFrame1->imageWidth = 96;
+	enemyFrame1->imageHeight = 32;
+	enemyFrame1->x = 0;
+	enemyFrame1->y = 0;
+	enemyFrame1->image = enemyImage1;
+	std::vector<Sprite::Frame*> enemyFrames1;
+	enemyFrames1.push_back(enemyFrame1);
 	//Enemy 1 frame2
-	enemyFrame = new Sprite::Frame();
-	enemyFrame->imageWidth = 96;
-	enemyFrame->imageHeight = 96;
-	enemyFrame->x = 32;
-	enemyFrame->y = 0;
-	enemyFrame->image = enemyImage;
-	enemyframes.push_back(enemyFrame);
+	enemyFrame1 = new Sprite::Frame();
+	enemyFrame1->imageWidth = 96;
+	enemyFrame1->imageHeight = 32;
+	enemyFrame1->x = 32;
+	enemyFrame1->y = 0;
+	enemyFrame1->image = enemyImage1;
+	enemyFrames1.push_back(enemyFrame1);
 	//Enemy 1 frame3
-	enemyFrame = new Sprite::Frame();
-	enemyFrame->imageWidth = 96;
-	enemyFrame->imageHeight = 96;
-	enemyFrame->x = 64;
-	enemyFrame->y = 0;
-	enemyFrame->image = enemyImage;
-	enemyframes.push_back(enemyFrame);
+	enemyFrame1 = new Sprite::Frame();
+	enemyFrame1->imageWidth = 96;
+	enemyFrame1->imageHeight = 32;
+	enemyFrame1->x = 64;
+	enemyFrame1->y = 0;
+	enemyFrame1->image = enemyImage1;
+	enemyFrames1.push_back(enemyFrame1);
 
-	mEnemy1 = new Enemy(XMVectorSet(mClientWidth / 2.0f - 10, mClientHeight / 2.0f-10, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32.0f, 32.0f, 0.1f, enemyframes, 0.25f, md3dDevice);
+	//Enemy 2 spritesheet image
+	Sprite::Frame* enemyFrame2 = new Sprite::Frame();
+	ID3D11ShaderResourceView* enemyImage2;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip2.png", 0, 0, &enemyImage2, 0);  //test
+	//Enemy 2 frame1
+	enemyFrame2->imageWidth = 96;
+	enemyFrame2->imageHeight = 32;
+	enemyFrame2->x = 0;
+	enemyFrame2->y = 0;
+	enemyFrame2->image = enemyImage2;
+	std::vector<Sprite::Frame*> enemyFrames2;
+	enemyFrames2.push_back(enemyFrame2);
+	//Enemy 2 frame2
+	enemyFrame2 = new Sprite::Frame();
+	enemyFrame2->imageWidth = 96;
+	enemyFrame2->imageHeight = 32;
+	enemyFrame2->x = 32;
+	enemyFrame2->y = 0;
+	enemyFrame2->image = enemyImage2;
+	enemyFrames2.push_back(enemyFrame2);
+	//Enemy 2 frame3
+	enemyFrame2 = new Sprite::Frame();
+	enemyFrame2->imageWidth = 96;
+	enemyFrame2->imageHeight = 32;
+	enemyFrame2->x = 64;
+	enemyFrame2->y = 0;
+	enemyFrame2->image = enemyImage2;
+	enemyFrames2.push_back(enemyFrame2);
+
+	//Enemy 3 spritesheet image
+	Sprite::Frame* enemyFrame3 = new Sprite::Frame();
+	ID3D11ShaderResourceView* enemyImage3;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip3.png", 0, 0, &enemyImage3, 0);  //test
+	//Enemy 3 frame1
+	enemyFrame3->imageWidth = 96;
+	enemyFrame3->imageHeight = 32;
+	enemyFrame3->x = 0;
+	enemyFrame3->y = 0;
+	enemyFrame3->image = enemyImage3;
+	std::vector<Sprite::Frame*> enemyFrames3;
+	enemyFrames3.push_back(enemyFrame3);
+	//Enemy 3 frame2
+	enemyFrame3 = new Sprite::Frame();
+	enemyFrame3->imageWidth = 96;
+	enemyFrame3->imageHeight = 32;
+	enemyFrame3->x = 32;
+	enemyFrame3->y = 0;
+	enemyFrame3->image = enemyImage3;
+	enemyFrames3.push_back(enemyFrame3);
+	//Enemy 3 frame3
+	enemyFrame3 = new Sprite::Frame();
+	enemyFrame3->imageWidth = 96;
+	enemyFrame3->imageHeight = 32;
+	enemyFrame3->x = 64;
+	enemyFrame3->y = 0;
+	enemyFrame3->image = enemyImage3;
+	enemyFrames3.push_back(enemyFrame3);
+
+	mEnemy1 = new Enemy(XMVectorSet(mClientWidth / 2.0f - 32, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		32.0f, 32.0f, 0.1f, enemyFrames1, 0.25f, md3dDevice);
+
+	mEnemy2 = new Enemy(XMVectorSet(mClientWidth / 2.0f - 64, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		32.0f, 32.0f, 0.1f, enemyFrames2, 0.25f, md3dDevice);
+
+	mEnemy3 = new Enemy(XMVectorSet(mClientWidth / 2.0f - 96, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		32.0f, 32.0f, 0.1f, enemyFrames3, 0.25f, md3dDevice);
 
 	mBG = new Sprite(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
 					 1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice);
@@ -748,6 +820,8 @@ void InClassProj::UpdateScene(float dt)
 	mPlayer->AddForce(XMVectorSet(0.0f, -9.81f, 0.0f, 0.0f));   //adds gravity
 
 	mEnemy1->Update(dt);
+	mEnemy2->Update(dt);
+	mEnemy3->Update(dt);
 
 	//collision checks between player and environment bounding boxes
 	for (int i = 0; i < boxes.size(); ++i)
@@ -802,6 +876,8 @@ void InClassProj::DrawScene()
 	mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
 
 	mEnemy1->Draw(vp, md3dImmediateContext, mLitTexEffect);
+	mEnemy2->Draw(vp, md3dImmediateContext, mLitTexEffect);
+	mEnemy3->Draw(vp, md3dImmediateContext, mLitTexEffect);
 
 	//mFont->DrawFont(md3dImmediateContext, XMVectorSet(10.0f, 500.0f, 0.0f, 0.0f), 50, 75, 10, "Hi Brandon, you are a good student");
 
