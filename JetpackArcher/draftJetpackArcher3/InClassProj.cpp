@@ -864,6 +864,9 @@ void InClassProj::UpdateScene(float dt)
 	
 	m2DCam->Update();
 
+	//for jetpack usage: Checks to see if the recharge is happening, if so updates the cooldown.
+	mPlayer->RechargeJetPack(dt);
+
 	//update enemies
 	for (int i = 0; i < enemies.size(); ++i)
 	{
@@ -1046,7 +1049,7 @@ void InClassProj::UpdateKeyboardInput(float dt)
 	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000)
 	{
 		//jetpack
-		//mPlayer->UseJetpack(dt);
+		mPlayer->UseJetpack(dt);
 	}
 	if (GetAsyncKeyState(VK_SPACE) & 0x8000)
 	{

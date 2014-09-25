@@ -7,7 +7,7 @@
 #include <vector>
 #include "Vertex.h"
 #include "GraphicalObject.h"
-#include "Player.h"
+#include "Player_phil_jetpack.h"
 #include "Projectile.h"
 #include "Effect.h"
 #include "FontRasterizer.h"
