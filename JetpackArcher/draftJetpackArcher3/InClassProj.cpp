@@ -155,6 +155,7 @@ public:
 	std::vector<Sprite::Frame*> projFrame;
 	float cooldownTimer = 0.0f;
 	bool canShoot = true;
+	bool isFacingRight = true;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd)
@@ -310,8 +311,8 @@ bool InClassProj::Init()
 	ID3D11ShaderResourceView* projImage;
 	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/arrow.png", 0, 0, &projImage, 0);
 	//projectile frame
-	projectileFrame->imageWidth = 32;
-	projectileFrame->imageHeight = 32;
+	projectileFrame->imageWidth = 22;
+	projectileFrame->imageHeight = 9;
 	projectileFrame->x = 0;
 	projectileFrame->y = 0;
 	projectileFrame->image = projImage;
@@ -940,7 +941,8 @@ void InClassProj::UpdateScene(float dt)
  		mProjectiles[i]->Update(dt);
 		for (int j = 0; j < enemies.size(); ++j)
 		{
-			if (mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MAX_DISTANCE)
+			if (mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MAX_DISTANCE/* ||
+				mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MIN_DISTANCE*/)
 			{
 				delete mProjectiles[i];
 				mProjectiles.erase(mProjectiles.begin() + i);
@@ -967,6 +969,7 @@ void InClassProj::UpdateScene(float dt)
 
 void InClassProj::DrawScene()
 {
+
 	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::White));
 	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 
@@ -1005,7 +1008,32 @@ void InClassProj::DrawScene()
 
 	mBG->Draw(vp, md3dImmediateContext, mLitTexEffect);
 
+	ID3D11RasterizerState* rs;
+	D3D11_RASTERIZER_DESC rsd;
+	rsd.CullMode = D3D11_CULL_NONE;
+	rsd.AntialiasedLineEnable = false;
+	rsd.DepthBias = 0.0f;
+	rsd.DepthBiasClamp = 0.0f;
+	rsd.DepthClipEnable = true;
+	rsd.FillMode = D3D11_FILL_SOLID;
+	rsd.FrontCounterClockwise = true;
+	rsd.MultisampleEnable = true;
+	rsd.ScissorEnable = false;
+	rsd.SlopeScaledDepthBias = 0.0f;
+	md3dDevice->CreateRasterizerState(&rsd, &rs);
+	md3dImmediateContext->RSSetState(rs);
+
+	//draw player
+	if (isFacingRight)
+	{
+		mPlayer->SetScale(XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f));
+	}
+	else if (!isFacingRight)
+	{
+		mPlayer->SetScale(XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f));
+	}
 	mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
+	md3dImmediateContext->RSSetState(0);
 	
 	//draw enemies
 	for (int i = 0; i < enemies.size(); ++i)
@@ -1072,13 +1100,21 @@ void InClassProj::UpdateKeyboardInput(float dt)
 	move = dt * 100;
 	if (GetAsyncKeyState(VK_LEFT) & 0x8000)
 	{
+		if (isFacingRight)
+		{
+			isFacingRight = false;
+		}
 		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] - move, mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f));
 	}
 	if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
 	{
+		if (!isFacingRight)
+		{
+			isFacingRight = true;
+		}
 		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] + move, mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f));
 	}
-	if (GetAsyncKeyState(VK_UP) & 0x8000 && &Player::LeaveGround == false)
+	if (GetAsyncKeyState(VK_UP) & 0x8000)
 	{
 		if (!GetAsyncKeyState(VK_LSHIFT))
 		{
@@ -1096,10 +1132,20 @@ void InClassProj::UpdateKeyboardInput(float dt)
 		//shoot arrows
 		if (canShoot)
 		{
-			Projectile* arrowProjectile = new Projectile(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f),
-				XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 32, 32, 0.5f, projFrame, 0.25f, md3dDevice, XMVectorSet(350.0f, 0.0f, 0.0f, 0.0f));
-			mProjectiles.push_back(arrowProjectile);
-			canShoot = false;
+			if (isFacingRight)
+			{
+				Projectile* arrowProjectile = new Projectile(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - 8, 0.0f, 0.0f),
+					XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, XMVectorSet(250.0f, 0.0f, 0.0f, 0.0f));
+				mProjectiles.push_back(arrowProjectile);
+				canShoot = false;
+			}
+			if (!isFacingRight)
+			{
+				Projectile* arrowProjectile = new Projectile(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - 8, 0.0f, 0.0f),
+					XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, XMVectorSet(-250.0f, 0.0f, 0.0f, 0.0f));
+				mProjectiles.push_back(arrowProjectile);
+				canShoot = false;
+			}
 		}
 		else
 		{
