@@ -1,3 +1,12 @@
+/*##############################################################################################
+										 - Jetpack Archer -
+Controls - LEFT ARROW to move left
+		 - RIGHT ARROW to move right
+		 - UP ARROW to jump
+		 - SPACE to shoot arrows
+		 - LEFT SHIFT to use jetpack
+###############################################################################################*/
+
 #include "d3dApp.h"
 #include "d3dx11Effect.h"
 #include "MathHelper.h"
@@ -5,23 +14,17 @@
 #include <stdlib.h>
 #include <time.h>
 #include <vector>
+#include "BoundingBoxes.h"
 #include "Vertex.h"
 #include "GraphicalObject.h"
-#include "Player_phil_jetpack.h"
+#include "Player.h"
+#include "Enemy.h"
 #include "Projectile.h"
 #include "Effect.h"
 #include "FontRasterizer.h"
 #include "Sprite.h"
 #include "xnacollision.h"
 #include "fmod.hpp"
-
-struct BoundingBox
-{
-	XMFLOAT2 pos;
-	float width;
-	float height;
-	BoundingBox() : pos(0.0f, 0.0f), width(0.0f), height(0.0f) {}
-};
 
 struct JetpackParticle
 {
@@ -34,6 +37,14 @@ const int MAX_PARTICLES = 100000;
 
 class InClassProj : public D3DApp
 {
+	enum CollisionSide
+	{
+		top,
+		right,
+		bot,
+		left
+	};
+
 public:
 	InClassProj(HINSTANCE hInstance);
 	~InClassProj();
@@ -59,7 +70,9 @@ private:
 	void UpdateParticleVB();
 	void UpdateKeyboardInput(float dt);
 
-	void RectRectCollision(BoundingBox r1, BoundingBox r2);
+	CollisionSide RectRectCollision(BoundingBoxes::BoundingBox r1, BoundingBoxes::BoundingBox r2, Sprite* sprite);
+	void InClassProj::SpriteRectCollision(Sprite* sprite, BoundingBoxes::BoundingBox bb);
+	bool EnemyProjCollision(Sprite* sprite, Projectile* arrow);
 
 	void DrawParticles();
 
@@ -82,45 +95,48 @@ private:
 	Sprite* mBG;
 
 	Player* mPlayer;
-	BoundingBox playerBB;
+	Enemy* mEnemy1;
+	Enemy* mEnemy2;
+	Enemy* mEnemy3;
+	std::vector<Enemy*> enemies;
 
-	BoundingBox bb1;
-	BoundingBox bb2;
-	BoundingBox bb3;
-	BoundingBox bb4;
-	BoundingBox bb5;
-	BoundingBox bb6;
-	BoundingBox bb7;
-	BoundingBox bb8;
-	BoundingBox bb9;
-	BoundingBox bb10;
-	BoundingBox bb11;
-	BoundingBox bb12;
-	BoundingBox bb13;
-	BoundingBox bb14;
-	BoundingBox bb15;
-	BoundingBox bb16;
-	BoundingBox bb17;
-	BoundingBox bb18;
-	BoundingBox bb19;
-	BoundingBox bb20;
-	BoundingBox bb21;
-	BoundingBox bb22;
-	BoundingBox bb23;
-	BoundingBox bb24;
-	BoundingBox bb25;
-	BoundingBox bb26;
-	BoundingBox bb27;
-	BoundingBox bb28;
-	BoundingBox bb29;
-	BoundingBox bb30;
-	BoundingBox bb31;
-	std::vector<BoundingBox> boxes;
+	BoundingBoxes::BoundingBox playerBB;
+
+	BoundingBoxes::BoundingBox bb1;
+	BoundingBoxes::BoundingBox bb2;
+	BoundingBoxes::BoundingBox bb3;
+	BoundingBoxes::BoundingBox bb4;
+	BoundingBoxes::BoundingBox bb5;
+	BoundingBoxes::BoundingBox bb6;
+	BoundingBoxes::BoundingBox bb7;
+	BoundingBoxes::BoundingBox bb8;
+	BoundingBoxes::BoundingBox bb9;
+	BoundingBoxes::BoundingBox bb10;
+	BoundingBoxes::BoundingBox bb11;
+	BoundingBoxes::BoundingBox bb12;
+	BoundingBoxes::BoundingBox bb13;
+	BoundingBoxes::BoundingBox bb14;
+	BoundingBoxes::BoundingBox bb15;
+	BoundingBoxes::BoundingBox bb16;
+	BoundingBoxes::BoundingBox bb17;
+	BoundingBoxes::BoundingBox bb18;
+	BoundingBoxes::BoundingBox bb19;
+	BoundingBoxes::BoundingBox bb20;
+	BoundingBoxes::BoundingBox bb21;
+	BoundingBoxes::BoundingBox bb22;
+	BoundingBoxes::BoundingBox bb23;
+	BoundingBoxes::BoundingBox bb24;
+	BoundingBoxes::BoundingBox bb25;
+	BoundingBoxes::BoundingBox bb26;
+	BoundingBoxes::BoundingBox bb27;
+	BoundingBoxes::BoundingBox bb28;
+	BoundingBoxes::BoundingBox bb29;
+	BoundingBoxes::BoundingBox bb30;
+	BoundingBoxes::BoundingBox bb31;
+	std::vector<BoundingBoxes::BoundingBox> boxes;
 
 	std::vector<Projectile*> mProjectiles;
-
 	Sprite::Frame* projectileFrame = new Sprite::Frame();
-
 
 	std::vector<JetpackParticle> mParticles;
 
@@ -157,7 +173,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 }
 
 InClassProj::InClassProj(HINSTANCE hInstance) : 
-	D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0), mBG(0)
+D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0)
 {
 	XMVECTOR pos = XMVectorSet(1.0f, 1.0f, 5.0f, 0.0f);
 	XMVECTOR look = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
@@ -188,6 +204,12 @@ InClassProj::~InClassProj()
 
 	if (mPlayer)
 		delete mPlayer;
+
+	for (int i = 0; i < enemies.size(); ++i)
+	{
+		if (enemies[i])
+			delete enemies[i];
+	}
 
 	if (mBG)
 		delete mBG;
@@ -239,7 +261,6 @@ FMOD::Sound      *sound1, *sound2, *sound3;
 FMOD::Channel    *channel = 0;
 unsigned int      version;
 void             *extradriverdata = 0;
-
 
 bool InClassProj::Init()
 {
@@ -309,10 +330,10 @@ bool InClassProj::Init()
 	std::vector<Sprite::Frame*> bgFrame;
 	bgFrame.push_back(BGFrame);
 
-	//spritesheet image
+	//Player spritesheet image
 	Sprite::Frame* newFrame = new Sprite::Frame();
 	ID3D11ShaderResourceView* image;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/player.png", 0, 0, &image, 0);  //test
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/player.png", 0, 0, &image, 0);  //test (has walk right only)
 	//player frame1
 	newFrame->imageWidth = 96;
 	newFrame->imageHeight = 96;
@@ -338,13 +359,118 @@ bool InClassProj::Init()
 	newFrame->image = image;
 	frames.push_back(newFrame);
 
-	mBG = new Sprite(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
-					 1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice);
+	//Enemy1 spritesheet image
+	Sprite::Frame* enemyFrame1 = new Sprite::Frame();
+	ID3D11ShaderResourceView* enemyImage1;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip1.png", 0, 0, &enemyImage1, 0);
+	//Enemy1 frame1
+	enemyFrame1->imageWidth = 96;
+	enemyFrame1->imageHeight = 32;
+	enemyFrame1->x = 0;
+	enemyFrame1->y = 0;
+	enemyFrame1->image = enemyImage1;
+	std::vector<Sprite::Frame*> enemyFrames1;
+	enemyFrames1.push_back(enemyFrame1);
+	//Enemy1 frame2
+	enemyFrame1 = new Sprite::Frame();
+	enemyFrame1->imageWidth = 96;
+	enemyFrame1->imageHeight = 32;
+	enemyFrame1->x = 32;
+	enemyFrame1->y = 0;
+	enemyFrame1->image = enemyImage1;
+	enemyFrames1.push_back(enemyFrame1);
+	//Enemy1 frame3
+	enemyFrame1 = new Sprite::Frame();
+	enemyFrame1->imageWidth = 96;
+	enemyFrame1->imageHeight = 32;
+	enemyFrame1->x = 64;
+	enemyFrame1->y = 0;
+	enemyFrame1->image = enemyImage1;
+	enemyFrames1.push_back(enemyFrame1);
 
+	//Enemy2 spritesheet image
+	Sprite::Frame* enemyFrame2 = new Sprite::Frame();
+	ID3D11ShaderResourceView* enemyImage2;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip2.png", 0, 0, &enemyImage2, 0);
+	//Enemy2 frame1
+	enemyFrame2->imageWidth = 96;
+	enemyFrame2->imageHeight = 32;
+	enemyFrame2->x = 0;
+	enemyFrame2->y = 0;
+	enemyFrame2->image = enemyImage2;
+	std::vector<Sprite::Frame*> enemyFrames2;
+	enemyFrames2.push_back(enemyFrame2);
+	//Enemy2 frame2
+	enemyFrame2 = new Sprite::Frame();
+	enemyFrame2->imageWidth = 96;
+	enemyFrame2->imageHeight = 32;
+	enemyFrame2->x = 32;
+	enemyFrame2->y = 0;
+	enemyFrame2->image = enemyImage2;
+	enemyFrames2.push_back(enemyFrame2);
+	//Enemy2 frame3
+	enemyFrame2 = new Sprite::Frame();
+	enemyFrame2->imageWidth = 96;
+	enemyFrame2->imageHeight = 32;
+	enemyFrame2->x = 64;
+	enemyFrame2->y = 0;
+	enemyFrame2->image = enemyImage2;
+	enemyFrames2.push_back(enemyFrame2);
+
+	//Enemy3 spritesheet image
+	Sprite::Frame* enemyFrame3 = new Sprite::Frame();
+	ID3D11ShaderResourceView* enemyImage3;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip3.png", 0, 0, &enemyImage3, 0);
+	//Enemy3 frame1
+	enemyFrame3->imageWidth = 96;
+	enemyFrame3->imageHeight = 32;
+	enemyFrame3->x = 0;
+	enemyFrame3->y = 0;
+	enemyFrame3->image = enemyImage3;
+	std::vector<Sprite::Frame*> enemyFrames3;
+	enemyFrames3.push_back(enemyFrame3);
+	//Enemy3 frame2
+	enemyFrame3 = new Sprite::Frame();
+	enemyFrame3->imageWidth = 96;
+	enemyFrame3->imageHeight = 32;
+	enemyFrame3->x = 32;
+	enemyFrame3->y = 0;
+	enemyFrame3->image = enemyImage3;
+	enemyFrames3.push_back(enemyFrame3);
+	//Enemy3 frame3
+	enemyFrame3 = new Sprite::Frame();
+	enemyFrame3->imageWidth = 96;
+	enemyFrame3->imageHeight = 32;
+	enemyFrame3->x = 64;
+	enemyFrame3->y = 0;
+	enemyFrame3->image = enemyImage3;
+	enemyFrames3.push_back(enemyFrame3);
+
+	//background
+	mBG = new Sprite(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
+		1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice);
+	//player
 	mPlayer = new Player(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-						 32, 32, 0.1f, frames, 0.25f, md3dDevice);
+		32, 32, 0.1f, frames, 0.25f, md3dDevice);
+	//enemy1
+	mEnemy1 = new Enemy(XMVectorSet(800.0f, 500.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		32.0f, 32.0f, 0.1f, enemyFrames1, 0.25f, md3dDevice);
+	enemies.push_back(mEnemy1);
+	//enemy2
+	mEnemy2 = new Enemy(XMVectorSet(600.0f, 700.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		32.0f, 32.0f, 0.1f, enemyFrames2, 0.25f, md3dDevice);
+	enemies.push_back(mEnemy2);
+	//enemy3
+	mEnemy3 = new Enemy(XMVectorSet(800, 200.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		32.0f, 32.0f, 0.1f, enemyFrames3, 0.25f, md3dDevice);
+	enemies.push_back(mEnemy3);
 
 	mPlayer->Play(true);
+
+	for (int i = 0; i < enemies.size(); ++i)
+	{
+		enemies[i]->Play(true);
+	}
 
 	//result = sys->playSound(sound1, 0, false, &channel);
 
@@ -355,11 +481,13 @@ bool InClassProj::Init()
 
 void InClassProj::InitBoundingBoxes()
 {
+	//player bounding box
 	playerBB.pos.x = mPlayer->GetPos().m128_f32[0];
 	playerBB.pos.y = mPlayer->GetPos().m128_f32[1];
 	playerBB.height = 12.0f;
-	playerBB.width = 12.0;
+	playerBB.width = 12.0f;
 
+	//environment bounding boxes
 	bb1.pos = XMFLOAT2(0.0f, 736.0f);
 	bb1.height = 32.0f;
 	bb1.width = 1024.0f;
@@ -626,7 +754,56 @@ void InClassProj::OnResize()
 	XMStoreFloat4x4(&m2DProj, P);
 }
 
-void InClassProj::RectRectCollision(BoundingBox r1, BoundingBox r2)
+//between enemies and BBs (player and environment)
+void InClassProj::SpriteRectCollision(Sprite* sprite, BoundingBoxes::BoundingBox bb)
+{
+	float r1CentreX = sprite->GetPos().m128_f32[0] + sprite->GetWidth() / 2;
+	float r1CentreY = sprite->GetPos().m128_f32[1] + sprite->GetHeight() / 2;
+
+	float r2CentreX = bb.pos.x + bb.width / 2;
+	float r2CentreY = bb.pos.y + bb.height / 2;
+
+	float diffX = r1CentreX - r2CentreX;
+	float diffY = r1CentreY - r2CentreY;
+	float halfWidths = (sprite->GetWidth() + bb.width) / 2;
+	float halfHeights = (sprite->GetHeight() + bb.height) / 2;
+
+	float overlapX = halfWidths - abs(diffX);
+	float overlapY = halfHeights - abs(diffY);
+
+	if (overlapX > 0 && overlapY > 0)
+	{
+		//check to see which axis to correct on (smallest overlap)
+		if (overlapX >= overlapY)
+		{
+			//correct sprite on y
+			if (r1CentreY < r2CentreY)
+			{
+				sprite->SetPos(XMVectorSet(sprite->GetPos().m128_f32[0], sprite->GetPos().m128_f32[1] - overlapY, 0.0f, 0.0f));
+			}
+			else
+			{
+				sprite->SetPos(XMVectorSet(sprite->GetPos().m128_f32[0], sprite->GetPos().m128_f32[1] + overlapY, 0.0f, 0.0f));
+			}
+		}
+		else
+		{
+			//correct sprite on x
+			if (r1CentreX < r2CentreX)
+			{
+				sprite->SetPos(XMVectorSet(sprite->GetPos().m128_f32[0] - overlapX, sprite->GetPos().m128_f32[1], 0.0f, 0.0f));
+			}
+			else
+			{
+				sprite->SetPos(XMVectorSet(sprite->GetPos().m128_f32[0] + overlapX, sprite->GetPos().m128_f32[1], 0.0f, 0.0f));
+			}
+		}
+	}
+}
+
+//between playerBB and environmentBBs
+//returns which side of sprite was hit: 0 = top, 1 = right, 2 = bot, 3 = left
+InClassProj::CollisionSide InClassProj::RectRectCollision(BoundingBoxes::BoundingBox r1, BoundingBoxes::BoundingBox r2, Sprite* sprite)
 {
 	float r1CentreX = r1.pos.x + r1.width / 2;
 	float r1CentreY = r1.pos.y + r1.height / 2;
@@ -644,37 +821,65 @@ void InClassProj::RectRectCollision(BoundingBox r1, BoundingBox r2)
 
 	if (overlapX > 0 && overlapY > 0)
 	{
-		//check to see which axis to correct on (smallest overlap)
+		//check to see which axis to correct on (smallest overlap) and which side of player was hit
 		if (overlapX >= overlapY)
 		{
-			//correct on y
+			//correct player on y
 			if (r1CentreY < r2CentreY)
 			{
-				mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - overlapY, 0.0f, 0.0f));
+				sprite->SetPos(XMVectorSet(sprite->GetPos().m128_f32[0], sprite->GetPos().m128_f32[1] - overlapY, 0.0f, 0.0f));
+				return CollisionSide::top;
 			}
 			else
 			{
-				//collision is with player's feet therefore:
-				mPlayer->HitGround();
-				mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] + overlapY, 0.0f, 0.0f));
+				sprite->SetPos(XMVectorSet(sprite->GetPos().m128_f32[0], sprite->GetPos().m128_f32[1] + overlapY, 0.0f, 0.0f));
+				return CollisionSide::bot;
 			}
 		}
 		else
 		{
-			//correct on x
+			//correct player on x
 			if (r1CentreX < r2CentreX)
 			{
-				mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] - overlapX, mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f));
+				sprite->SetPos(XMVectorSet(sprite->GetPos().m128_f32[0] - overlapX, sprite->GetPos().m128_f32[1], 0.0f, 0.0f));
+				return CollisionSide::right;
 			}
 			else
 			{
-				mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] + overlapX, mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f));
+				sprite->SetPos(XMVectorSet(sprite->GetPos().m128_f32[0] + overlapX, sprite->GetPos().m128_f32[1], 0.0f, 0.0f));
+				return CollisionSide::left;
 			}
 		}
 	}
 }
 
-//float timer = 0.0f;
+//between enemies and arrow projectiles
+bool InClassProj::EnemyProjCollision(Sprite* sprite, Projectile* arrow)
+{
+	float r1CentreX = sprite->GetPos().m128_f32[0] + sprite->GetWidth() / 2;
+	float r1CentreY = sprite->GetPos().m128_f32[1] + sprite->GetHeight() / 2;
+
+	float p1CentreX = arrow->GetPos().m128_f32[0] + arrow->GetProjWidth() / 2;
+	float p1CentreY = arrow->GetPos().m128_f32[1] + arrow->GetProjHeight() / 2;
+
+	float diffX = r1CentreX - p1CentreX;
+	float diffY = r1CentreY - p1CentreY;
+	float halfWidths = (sprite->GetWidth() + arrow->GetProjWidth()) / 2;
+	float halfHeights = (sprite->GetHeight() + arrow->GetProjHeight()) / 2;
+
+	float overlapX = halfWidths - abs(diffX);
+	float overlapY = halfHeights - abs(diffY);
+
+	if (overlapX > 0 && overlapY > 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void InClassProj::UpdateScene(float dt)
 {
 	playerBB.pos.x = mPlayer->GetPos().m128_f32[0];
@@ -685,20 +890,7 @@ void InClassProj::UpdateScene(float dt)
 	m2DCam->Update();
 
 	//for jetpack usage: Checks to see if the recharge is happening, if so updates the cooldown.
-	mPlayer->RechargeJetPack(dt);
-	
-
-	//update projectiles
-	for (int i = 0; i < mProjectiles.size(); ++i)
-	{
-		mProjectiles[i]->Update(dt);
-		if (mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MAX_DISTANCE)
-		{
-			delete mProjectiles[i];
-			mProjectiles.erase(mProjectiles.begin() + i);
-			i--;
-		}
-	}
+	mPlayer->RechargeJetpack(dt);
 
 	//update particles
 	for (int i = 0; i < mParticles.size(); ++i)
@@ -710,15 +902,68 @@ void InClassProj::UpdateScene(float dt)
 	}
 	UpdateParticleVB();
 
+	//update player
 	mPlayer->Update(dt);
 	mPlayer->AddForce(XMVectorSet(0.0f, -9.81f, 0.0f, 0.0f));   //adds gravity
 
-	//collision checks between player and environment bounding boxes
-	for (int i = 0; i < boxes.size(); ++i)
+	//update enemies
+	for (int i = 0; i < enemies.size(); ++i)
 	{
-		RectRectCollision(playerBB, boxes[i]);
+		enemies[i]->Update(dt);
+		enemies[i]->Chase(enemies, mPlayer, dt);
+
+		//collision checks between enemies and playerBB		
+		SpriteRectCollision(enemies[i], playerBB);
+
+		//collision checks between enemies and environmentBBs
+		for (int j = 0; j < boxes.size(); ++j)
+		{
+			SpriteRectCollision(enemies[i], boxes[j]);
+		}
 	}
 
+	//collision between playerBB and environmentBBs
+	for (int i = 0; i < boxes.size(); ++i)
+	{
+		RectRectCollision(playerBB, boxes[i], mPlayer);
+	}
+
+	//updating mGrounded bool for player jump
+	for (int i = 0; i < boxes.size(); ++i)
+	{
+		if (RectRectCollision(playerBB, boxes[i], mPlayer) == CollisionSide::bot)
+		{
+			mPlayer->HitGround();
+		}
+	}
+
+	//update projectiles
+	for (int i = 0; i < mProjectiles.size(); ++i)
+	{
+ 		mProjectiles[i]->Update(dt);
+		for (int j = 0; j < enemies.size(); ++j)
+		{
+			if (mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MAX_DISTANCE)
+			{
+				delete mProjectiles[i];
+				mProjectiles.erase(mProjectiles.begin() + i);
+				i--;
+				break;
+			}
+			//collision checks between enemies and projectiles	
+			if (EnemyProjCollision(enemies[j], mProjectiles[i]))
+			{
+				delete mProjectiles[i];
+				mProjectiles.erase(mProjectiles.begin() + i);
+				i--;
+				delete enemies[j];
+				enemies.erase(enemies.begin() + j);
+				j--;
+ 				break;
+			}
+		}
+	}
+		
 	//update sounds
 	sys->update();
 }
@@ -763,9 +1008,39 @@ void InClassProj::DrawScene()
 
 	mBG->Draw(vp, md3dImmediateContext, mLitTexEffect);
 
-	mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
+	ID3D11RasterizerState* rs;
+	D3D11_RASTERIZER_DESC rsd;
+	rsd.CullMode = D3D11_CULL_NONE;
+	rsd.AntialiasedLineEnable = false;
+	rsd.DepthBias = 0.0f;
+	rsd.DepthBiasClamp = 0.0f;
+	rsd.DepthClipEnable = true;
+	rsd.FillMode = D3D11_FILL_SOLID;
+	rsd.FrontCounterClockwise = true;
+	rsd.MultisampleEnable = true;
+	rsd.ScissorEnable = false;
+	rsd.SlopeScaledDepthBias = 0.0f;
+	md3dDevice->CreateRasterizerState(&rsd, &rs);
+	md3dImmediateContext->RSSetState(rs);
 
-	//mFont->DrawFont(md3dImmediateContext, XMVectorSet(10.0f, 500.0f, 0.0f, 0.0f), 50, 75, 10, "Hi Brandon, you are a good student");
+	//Draw Player
+
+	if (mPlayer->GetFacing() == FALSE)
+	{
+		mPlayer->SetScale(XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f));
+	}
+	else if (mPlayer->GetFacing() == TRUE)
+	{
+		mPlayer->SetScale(XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f));
+	}
+
+	mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
+	md3dImmediateContext->RSSetState(0);
+	//draw enemies
+	for (int i = 0; i < enemies.size(); ++i)
+	{
+		enemies[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
+	}
 
 	//draw arrow projectiles
 	for (int i = 0; i < mProjectiles.size(); ++i)
@@ -776,6 +1051,8 @@ void InClassProj::DrawScene()
 	DrawParticles();
 	md3dImmediateContext->OMSetDepthStencilState(0, 0);
 	md3dImmediateContext->OMSetBlendState(0, blendFactor, 0xffffffff);
+
+	//mFont->DrawFont(md3dImmediateContext, XMVectorSet(10.0f, 500.0f, 0.0f, 0.0f), 50, 75, 10, "Hi Brandon, you are a good student");
 
 	HR(mSwapChain->Present(1, 0));
 }
@@ -820,18 +1097,22 @@ void InClassProj::OnMouseMove(WPARAM btnState, int x, int y)
 
 void InClassProj::UpdateKeyboardInput(float dt)
 {
+	float move = 0.0f;
+	move = dt * 100;
 	if (GetAsyncKeyState(VK_LEFT) & 0x8000)
 	{
-		//temp code:
-		float move = 0.0f;
-		move = dt * 100;
+		if (mPlayer->GetFacing() == TRUE)
+		{
+			mPlayer->SetFacing();
+		}
 		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] - move, mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f));
 	}
 	if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
 	{
-		//temp code:
-		float move = 0.0f;
-		move = dt * 100;
+		if (mPlayer->GetFacing() == FALSE)
+		{
+			mPlayer->SetFacing();
+		}
 		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] + move, mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f));
 	}
 	if (GetAsyncKeyState(VK_UP) & 0x8000)
@@ -857,14 +1138,12 @@ void InClassProj::UpdateKeyboardInput(float dt)
 		else
 		{
 			cooldownTimer++;
-			if (cooldownTimer >= 10)
+			if (cooldownTimer >= 15)
 			{
 				canShoot = true;
 				cooldownTimer = 0.0f;
 			}
 		}
-
-
 
 		//arrow sfx
 		bool isPlaying = false;
