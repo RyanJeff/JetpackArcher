@@ -889,9 +889,6 @@ void InClassProj::UpdateScene(float dt)
 	
 	m2DCam->Update();
 
-	//for jetpack usage: Checks to see if the recharge is happening, if so updates the cooldown.
-	mPlayer->RechargeJetpack(dt);
-
 	//update particles
 	for (int i = 0; i < mParticles.size(); ++i)
 	{
