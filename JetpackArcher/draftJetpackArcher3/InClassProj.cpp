@@ -1044,7 +1044,10 @@ void InClassProj::UpdateKeyboardInput(float dt)
 	if (GetAsyncKeyState(VK_UP) & 0x8000)
 	{
 		//jump
-		mPlayer->Jump();
+		if (!GetAsyncKeyState(VK_LSHIFT))
+		{
+			mPlayer->Jump();
+		}
 	}
 	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000)
 	{
