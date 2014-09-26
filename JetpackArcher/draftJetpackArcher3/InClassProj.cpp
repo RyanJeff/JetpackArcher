@@ -1078,10 +1078,13 @@ void InClassProj::UpdateKeyboardInput(float dt)
 	{
 		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] + move, mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f));
 	}
-	if (GetAsyncKeyState(VK_UP) & 0x8000)
+	if (GetAsyncKeyState(VK_UP) & 0x8000 && &Player::LeaveGround == false)
 	{
-		//jump
-		mPlayer->Jump();
+		if (!GetAsyncKeyState(VK_LSHIFT))
+		{
+			//jump
+			mPlayer->Jump();
+		}
 	}
 	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000)
 	{
