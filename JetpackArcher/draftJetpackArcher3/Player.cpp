@@ -1,5 +1,4 @@
 #include "Player.h"
-#include "d3dApp.h"
 
 Player::~Player(void)
 {
@@ -19,6 +18,7 @@ void Player::Jump()
 
 void Player::UseJetpack(float dt)
 {
+
 	//Check to see if jet pack is recharged and resets the useage timer.
 	if (jetPackRecharge == 0.0f)
 	{
@@ -32,12 +32,8 @@ void Player::UseJetpack(float dt)
 		{
 			jetPackUseage += dt;
 			XMVECTOR vel = XMLoadFloat3(&mVelocity);
-			if (vel.m128_f32[1] < JUMP_FORCE)
-			{
-				vel = XMVectorSet(vel.m128_f32[0], vel.m128_f32[1] + (JUMP_FORCE / 150.0f), vel.m128_f32[2], 0.0f);
-				XMStoreFloat3(&mVelocity, vel);
-			}
-			
+			vel = XMVectorSet(vel.m128_f32[0], vel.m128_f32[1] + (JUMP_FORCE / 150), vel.m128_f32[2], 0.0f);
+			XMStoreFloat3(&mVelocity, vel);
 		}
 
 	}
