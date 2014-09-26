@@ -5,31 +5,31 @@ class Player : public Sprite
 {
 private:
 	const float JUMP_FORCE;
+	const float JETPACK_FORCE;
 
-	//jet pack vars
-	float jetPackRecharge;
-	float jetPackUseage;
+	float jetpackRecharge;
+	float jetpackUsage;
 
 public:
-	Player(void) : JUMP_FORCE(560.0f)
+	Player(void) : JUMP_FORCE(405.0f), JETPACK_FORCE(2.7f)
 	{}
 
 	Player(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t frameHeight, float depth, const std::vector<Frame*>& frames,
 		float frameRate, ID3D11Device* device) :
-		Sprite(pos2D, scale2D, frameWidth, frameHeight, depth, frames, frameRate, device),
-		JUMP_FORCE(405.0f)
+			Sprite(pos2D, scale2D, frameWidth, frameHeight, depth, frames, frameRate, device),
+			JUMP_FORCE(405.0f),
+			JETPACK_FORCE(2.7f)
 	{
-		jetPackRecharge = 0.0f;
-		jetPackUseage = 0.0f;
+		jetpackRecharge = 0.0f;
+		jetpackUsage = 0.0f;
 	}
 
 	~Player(void);
 
 	void Jump();
 
-	//Jet pack functions
 	void UseJetpack(float dt);
 	float GetRechargeTime();
 	float GetUsage();
-	void RechargeJetPack(float dt);
+	void RechargeJetpack(float dt);
 };

@@ -1,9 +1,5 @@
 #include "Projectile.h"
 
-//Projectile::Projectile() : MAX_DISTANCE(2000.0f)
-//{
-//}
-
 Projectile::~Projectile()
 {
 }

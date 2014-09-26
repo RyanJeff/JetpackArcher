@@ -1,6 +1,7 @@
 #pragma once
 #include "GraphicalGeometry.h"
 #include "Effect.h"
+#include "BoundingBoxes.h"
 
 class Sprite : public GraphicalGeometry
 {
@@ -113,6 +114,16 @@ public:
 		mGrounded = false;
 	}
 
+	float GetWidth()
+	{
+		return mWidth;
+	}
+
+	float GetHeight()
+	{
+		return mHeight;
+	}
+
 	virtual void AddForce(FXMVECTOR force);
 
 	void Draw(CXMMATRIX vp, ID3D11DeviceContext* context, LitTexEffect* litTexEffect);
@@ -142,4 +153,7 @@ protected:
 	float mSpeed;
 	XMFLOAT3 mVelocity;
 	bool mGrounded;
+
+	float mWidth;
+	float mHeight;
 };

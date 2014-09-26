@@ -12,7 +12,9 @@ Sprite::Sprite(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t
 		mAngle(0),
 		mCurrFrameTime(0.0f),
 		mVelocity(0.0f, 0.0f, 0.0f),
-		mGrounded(false)
+		mGrounded(false),
+		mWidth(20.0f),
+		mHeight(32.0f)
 {
 	XMStoreFloat2(&mPos, pos2D);
 	XMStoreFloat2(&mScale, scale2D);
@@ -23,10 +25,6 @@ Sprite::Sprite(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t
 
 Sprite::~Sprite()
 {
-	//for (int i = 0; i < mFrames.size(); ++i)
-	//{
-	//	delete mFrames[i];
-	//}
 }
 
 void Sprite::HitGround()
@@ -158,11 +156,11 @@ void Sprite::Update(float dt)
 	XMVECTOR vel = XMLoadFloat3(&mVelocity);
 	//if (mGrounded)
 	//{
-		//vel = vel * 0.8f;
+	//	vel = vel * 0.8f;
 	//}
 	//else
 	//{
-		//vel = vel * 0.97f;
+	//	vel = vel * 0.97f;
 	//}
 	pos = pos + (vel * dt);
 	XMStoreFloat2(&mPos, pos);

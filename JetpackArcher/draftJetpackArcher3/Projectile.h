@@ -7,17 +7,19 @@ protected:
 	XMFLOAT3 mVelocity;
 	float mDamage;
 	float mDistanceTravelled;
+	float mProjWidth;
+	float mProjHeight;
 
 public:
-	//Projectile();
-
 	Projectile(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t frameHeight, float depth, const std::vector<Frame*>& frames,
 		float frameRate, ID3D11Device* device, XMVECTOR velocity = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f)) :
 			Sprite(pos2D, scale2D, frameWidth, frameHeight, depth, frames, frameRate, device),
 			MAX_DISTANCE(1000.0f),
 			mDistanceTravelled(0.0f),
 			mDamage(1.0f),
-			mVelocity(0.0f, 0.0f, 0.0f)
+			mVelocity(0.0f, 0.0f, 0.0f),
+			mProjWidth(20.0f),
+			mProjHeight(8.0f)
 	{
 		XMStoreFloat3(&mVelocity, velocity);
 	}
@@ -39,4 +41,14 @@ public:
 	}
 
 	const float MAX_DISTANCE;
+
+	float GetProjWidth()
+	{
+		return mProjWidth;
+	}
+
+	float GetProjHeight()
+	{
+		return mProjHeight;
+	}
 };
