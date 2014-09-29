@@ -4,8 +4,6 @@
 class Projectile : public Sprite
 {
 protected:
-	XMFLOAT3 mVelocity;
-	float mDamage;
 	float mDistanceTravelled;
 	float mProjWidth;
 	float mProjHeight;
@@ -15,11 +13,10 @@ public:
 		float frameRate, ID3D11Device* device, XMVECTOR velocity = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f)) :
 			Sprite(pos2D, scale2D, frameWidth, frameHeight, depth, frames, frameRate, device),
 			MAX_DISTANCE(1000.0f),
+			MIN_DISTANCE(-1000.0f),
 			mDistanceTravelled(0.0f),
-			mDamage(1.0f),
-			mVelocity(0.0f, 0.0f, 0.0f),
-			mProjWidth(20.0f),
-			mProjHeight(8.0f)
+			mProjWidth(22.0f),
+			mProjHeight(9.0f)
 	{
 		XMStoreFloat3(&mVelocity, velocity);
 	}
@@ -30,17 +27,13 @@ public:
 
 	virtual void Update(float dt);
 
-	float GetDamage()
-	{
-		return mDamage;
-	}
-
 	float GetDistanceTravelled()
 	{
 		return mDistanceTravelled;
 	}
 
 	const float MAX_DISTANCE;
+	const float MIN_DISTANCE;
 
 	float GetProjWidth()
 	{

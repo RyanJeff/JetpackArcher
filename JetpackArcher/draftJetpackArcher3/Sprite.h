@@ -124,6 +124,28 @@ public:
 		return mHeight;
 	}
 
+	void SetHealth(float health)
+	{
+		mHealth = health;
+	}
+
+	float GetHealth()
+	{
+		return mHealth;
+	}
+
+	void SetDamage(float damage)
+	{
+		mDamage = damage;
+	}
+	
+	float GetDamage()
+	{
+		return mDamage;
+	}
+
+	void ApplyDamage(Sprite* spriteHit);
+	
 	virtual void AddForce(FXMVECTOR force);
 
 	void Draw(CXMMATRIX vp, ID3D11DeviceContext* context, LitTexEffect* litTexEffect);
@@ -156,4 +178,6 @@ protected:
 
 	float mWidth;
 	float mHeight;
+
+	float mDamage;
 };

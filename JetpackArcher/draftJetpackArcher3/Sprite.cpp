@@ -14,7 +14,9 @@ Sprite::Sprite(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t
 		mVelocity(0.0f, 0.0f, 0.0f),
 		mGrounded(false),
 		mWidth(20.0f),
-		mHeight(32.0f)
+		mHeight(32.0f),
+		mHealth(5.0f),
+		mDamage(1.0f)
 {
 	XMStoreFloat2(&mPos, pos2D);
 	XMStoreFloat2(&mScale, scale2D);
@@ -187,4 +189,9 @@ void Sprite::AddForce(FXMVECTOR force)
 	XMVECTOR vel = XMLoadFloat3(&mVelocity);
 	vel = vel + force;
 	XMStoreFloat3(&mVelocity, vel);
+}
+
+void Sprite::ApplyDamage(Sprite* spriteHit)
+{
+	spriteHit->SetHealth(spriteHit->GetHealth() - mDamage);
 }

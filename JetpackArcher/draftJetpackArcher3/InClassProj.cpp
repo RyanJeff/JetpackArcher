@@ -73,6 +73,7 @@ private:
 	CollisionSide RectRectCollision(BoundingBoxes::BoundingBox r1, BoundingBoxes::BoundingBox r2, Sprite* sprite);
 	void InClassProj::SpriteRectCollision(Sprite* sprite, BoundingBoxes::BoundingBox bb);
 	bool EnemyProjCollision(Sprite* sprite, Projectile* arrow);
+	bool PlayerEnemyCollision(Sprite* player, Sprite* enemy);
 
 	void DrawParticles();
 
@@ -156,6 +157,7 @@ public:
 	float cooldownTimer = 0.0f;
 	bool canShoot = true;
 	bool isFacingRight = true;
+	bool playerHit = false;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd)
@@ -881,8 +883,45 @@ bool InClassProj::EnemyProjCollision(Sprite* sprite, Projectile* arrow)
 	}
 }
 
+//for player health decrementing
+bool InClassProj::PlayerEnemyCollision(Sprite* player, Sprite* enemy)
+{
+	float r1CentreX = player->GetPos().m128_f32[0] + player->GetWidth() / 2;
+	float r1CentreY = player->GetPos().m128_f32[1] + player->GetHeight() / 2;
+
+	float p1CentreX = enemy->GetPos().m128_f32[0] + enemy->GetWidth() / 2;
+	float p1CentreY = enemy->GetPos().m128_f32[1] + enemy->GetHeight() / 2;
+
+	float diffX = r1CentreX - p1CentreX;
+	float diffY = r1CentreY - p1CentreY;
+	float halfWidths = (player->GetWidth() + enemy->GetWidth()) / 2;
+	float halfHeights = (player->GetHeight() + enemy->GetHeight()) / 2;
+
+	float overlapX = halfWidths - abs(diffX);
+	float overlapY = halfHeights - abs(diffY);
+
+	if (overlapX > 0 && overlapY > 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+float recoverTime = 0.0f;
 void InClassProj::UpdateScene(float dt)
 {
+	if (recoverTime > 0.0f)
+	{
+		recoverTime = recoverTime - dt;
+	}
+	else
+	{
+		recoverTime = 0.0f;
+	}
+
 	playerBB.pos.x = mPlayer->GetPos().m128_f32[0];
 	playerBB.pos.y = mPlayer->GetPos().m128_f32[1];
 
@@ -903,6 +942,23 @@ void InClassProj::UpdateScene(float dt)
 	//update player
 	mPlayer->Update(dt);
 	mPlayer->AddForce(XMVectorSet(0.0f, -9.81f, 0.0f, 0.0f));   //adds gravity
+	//update enemy damage done to player
+	for (int i = 0; i < enemies.size(); ++i)
+	{
+		if (PlayerEnemyCollision(mPlayer, enemies[i]) && recoverTime == 0.0f)
+		{
+			enemies[i]->ApplyDamage(mPlayer);
+			std::wstringstream ss;
+			ss << mPlayer->GetHealth();
+			OutputDebugString(ss.str().c_str());
+			OutputDebugString(L"\n");
+			recoverTime = 3.0f;   //player has a 3s vunerability timer
+		}
+	}
+	if (mPlayer->GetHealth() == 0)
+	{
+		//switch to game over state to display game over screen
+	}
 
 	//update enemies
 	for (int i = 0; i < enemies.size(); ++i)
@@ -918,17 +974,23 @@ void InClassProj::UpdateScene(float dt)
 		{
 			SpriteRectCollision(enemies[i], boxes[j]);
 		}
+
+		//delete enemy upon death
+		if (enemies[i]->GetHealth() == 0)
+		{
+			delete enemies[i];
+			enemies.erase(enemies.begin() + i);
+			i--;
+			break;
+		}
 	}
 
 	//collision between playerBB and environmentBBs
 	for (int i = 0; i < boxes.size(); ++i)
 	{
 		RectRectCollision(playerBB, boxes[i], mPlayer);
-	}
 
-	//updating mGrounded bool for player jump
-	for (int i = 0; i < boxes.size(); ++i)
-	{
+		//update mGrounded bool for player jump
 		if (RectRectCollision(playerBB, boxes[i], mPlayer) == CollisionSide::bot)
 		{
 			mPlayer->HitGround();
@@ -941,8 +1003,8 @@ void InClassProj::UpdateScene(float dt)
  		mProjectiles[i]->Update(dt);
 		for (int j = 0; j < enemies.size(); ++j)
 		{
-			if (mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MAX_DISTANCE/* ||
-				mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MIN_DISTANCE*/)
+			if (mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MAX_DISTANCE ||
+				mProjectiles[i]->GetDistanceTravelled() < mProjectiles[i]->MIN_DISTANCE)
 			{
 				delete mProjectiles[i];
 				mProjectiles.erase(mProjectiles.begin() + i);
@@ -952,13 +1014,16 @@ void InClassProj::UpdateScene(float dt)
 			//collision checks between enemies and projectiles	
 			if (EnemyProjCollision(enemies[j], mProjectiles[i]))
 			{
+				mProjectiles[i]->ApplyDamage(enemies[j]);
+				/*std::wstringstream ss;
+				ss << enemies[j]->GetHealth();
+				OutputDebugString(ss.str().c_str());
+				OutputDebugString(L"\n");*/
 				delete mProjectiles[i];
 				mProjectiles.erase(mProjectiles.begin() + i);
 				i--;
-				delete enemies[j];
-				enemies.erase(enemies.begin() + j);
-				j--;
- 				break;
+				break;
+				
 			}
 		}
 	}
