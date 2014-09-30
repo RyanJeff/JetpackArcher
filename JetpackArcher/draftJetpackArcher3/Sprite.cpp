@@ -2,12 +2,13 @@
 #include "Vertex.h"
 
 Sprite::Sprite(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t frameHeight, float depth, const std::vector<Frame*>& frames, 
-	float frameRate, ID3D11Device* device) :
+	float frameRate, ID3D11Device* device, float health) :
 		mFrameWidth(frameWidth),
 		mFrameHeight(frameHeight),
 		mDepth(depth),
 		mFrames(frames),
 		mFrameRate(frameRate),
+		mHealth(health),
 		mFrameIndex(0),
 		mAngle(0),
 		mCurrFrameTime(0.0f),
@@ -15,7 +16,6 @@ Sprite::Sprite(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t
 		mGrounded(false),
 		mWidth(20.0f),
 		mHeight(32.0f),
-		mHealth(5.0f),
 		mDamage(1.0f)
 {
 	XMStoreFloat2(&mPos, pos2D);

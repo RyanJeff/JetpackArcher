@@ -16,8 +16,8 @@ public:
 	{}
 
 	Player(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t frameHeight, float depth, const std::vector<Frame*>& frames,
-		float frameRate, ID3D11Device* device) :
-			Sprite(pos2D, scale2D, frameWidth, frameHeight, depth, frames, frameRate, device),
+		float frameRate, ID3D11Device* device, float health) :
+		Sprite(pos2D, scale2D, frameWidth, frameHeight, depth, frames, frameRate, device, health),
 			JUMP_FORCE(405.0f),
 			JETPACK_FORCE(12.0f),
 			JP_GRAVITY(1000.0f)

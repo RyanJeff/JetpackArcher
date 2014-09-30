@@ -18,7 +18,7 @@ public:
 
 public:
 	Sprite(FXMVECTOR pos2D, FXMVECTOR scale2D, uint16_t frameWidth, uint16_t frameHeight, float depth, 
-		const std::vector<Frame*>& frames, float frameRate, ID3D11Device* device);
+		const std::vector<Frame*>& frames, float frameRate, ID3D11Device* device, float health);
 
 	Sprite::Sprite();
 

@@ -33,7 +33,7 @@ struct JetpackParticle
 	XMFLOAT2 size;
 };
 
-const int MAX_PARTICLES = 100000;
+const int MAX_PARTICLES = 100;
 
 class InClassProj : public D3DApp
 {
@@ -50,11 +50,10 @@ public:
 	~InClassProj();
 
 	bool Init();
+	void InitBoundingBoxes();
 	void OnResize();
 	void UpdateScene(float dt);
 	void DrawScene(); 
-
-	void InitBoundingBoxes();
 
 	void OnMouseDown(WPARAM btnState, int x, int y);
 	void OnMouseUp(WPARAM btnState, int x, int y);
@@ -71,7 +70,7 @@ private:
 	void UpdateKeyboardInput(float dt);
 
 	CollisionSide RectRectCollision(BoundingBoxes::BoundingBox r1, BoundingBoxes::BoundingBox r2, Sprite* sprite);
-	void InClassProj::SpriteRectCollision(Sprite* sprite, BoundingBoxes::BoundingBox bb);
+	void SpriteRectCollision(Sprite* sprite, BoundingBoxes::BoundingBox bb);
 	bool EnemyProjCollision(Sprite* sprite, Projectile* arrow);
 	bool PlayerEnemyCollision(Sprite* player, Sprite* enemy);
 
@@ -158,6 +157,7 @@ public:
 	bool canShoot = true;
 	bool isFacingRight = true;
 	bool playerHit = false;
+	float recoverTime = 0.0f;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd)
@@ -176,7 +176,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 }
 
 InClassProj::InClassProj(HINSTANCE hInstance) : 
-D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0)
+	D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0)
 {
 	XMVECTOR pos = XMVectorSet(1.0f, 1.0f, 5.0f, 0.0f);
 	XMVECTOR look = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
@@ -278,7 +278,7 @@ bool InClassProj::Init()
 		OutputDebugString(L"FMOD lib version doesn't match header version");
 	}
 	result = sys->init(32, FMOD_INIT_NORMAL, extradriverdata);
-	result = sys->createSound("Sounds/thunder.ogg", FMOD_DEFAULT, 0, &sound1);  //fire arrow sfx (placeholder)
+	result = sys->createSound("Sounds/choo.ogg", FMOD_DEFAULT, 0, &sound1);  //fire arrow sfx (placeholder?)
 	result = sound1->setMode(FMOD_LOOP_OFF);
 
  	mLitTexEffect = new LitTexEffect();
@@ -336,7 +336,7 @@ bool InClassProj::Init()
 	//Player spritesheet image
 	Sprite::Frame* newFrame = new Sprite::Frame();
 	ID3D11ShaderResourceView* image;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/player.png", 0, 0, &image, 0);  //test (has walk right only)
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/player.png", 0, 0, &image, 0);
 	//player frame1
 	newFrame->imageWidth = 96;
 	newFrame->imageHeight = 96;
@@ -451,21 +451,21 @@ bool InClassProj::Init()
 
 	//background
 	mBG = new Sprite(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
-		1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice);
+		1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice, 0.0f);
 	//player
 	mPlayer = new Player(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32, 32, 0.1f, frames, 0.25f, md3dDevice);
+		32, 32, 0.1f, frames, 0.25f, md3dDevice, 5.0f);
 	//enemy1
-	mEnemy1 = new Enemy(XMVectorSet(800.0f, 500.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32.0f, 32.0f, 0.1f, enemyFrames1, 0.25f, md3dDevice);
+	mEnemy1 = new Enemy(XMVectorSet(800.0f, 500.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
+		32.0f, 32.0f, 0.1f, enemyFrames1, 0.25f, md3dDevice, 5.0f);
 	enemies.push_back(mEnemy1);
 	//enemy2
 	mEnemy2 = new Enemy(XMVectorSet(600.0f, 700.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32.0f, 32.0f, 0.1f, enemyFrames2, 0.25f, md3dDevice);
+		32.0f, 32.0f, 0.1f, enemyFrames2, 0.25f, md3dDevice, 5.0f);
 	enemies.push_back(mEnemy2);
 	//enemy3
 	mEnemy3 = new Enemy(XMVectorSet(800, 200.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32.0f, 32.0f, 0.1f, enemyFrames3, 0.25f, md3dDevice);
+		32.0f, 32.0f, 0.1f, enemyFrames3, 0.25f, md3dDevice, 5.0f);
 	enemies.push_back(mEnemy3);
 
 	mPlayer->Play(true);
@@ -910,9 +910,23 @@ bool InClassProj::PlayerEnemyCollision(Sprite* player, Sprite* enemy)
 	}
 }
 
-float recoverTime = 0.0f;
 void InClassProj::UpdateScene(float dt)
 {
+	ID3D11RasterizerState* rs;
+	D3D11_RASTERIZER_DESC rsd;
+	rsd.CullMode = D3D11_CULL_NONE;
+	rsd.AntialiasedLineEnable = false;
+	rsd.DepthBias = 0.0f;
+	rsd.DepthBiasClamp = 0.0f;
+	rsd.DepthClipEnable = true;
+	rsd.FillMode = D3D11_FILL_SOLID;
+	rsd.FrontCounterClockwise = true;
+	rsd.MultisampleEnable = true;
+	rsd.ScissorEnable = false;
+	rsd.SlopeScaledDepthBias = 0.0f;
+	md3dDevice->CreateRasterizerState(&rsd, &rs);
+	md3dImmediateContext->RSSetState(rs);
+
 	if (recoverTime > 0.0f)
 	{
 		recoverTime = recoverTime - dt;
@@ -930,33 +944,29 @@ void InClassProj::UpdateScene(float dt)
 	m2DCam->Update();
 
 	//update particles
-	for (int i = 0; i < mParticles.size(); ++i)
+	/*for (int i = 0; i < mParticles.size(); ++i)
 	{
 		XMVECTOR vel = XMLoadFloat3(&mParticles[i].vel);
 		XMVECTOR pos = XMLoadFloat3(&mParticles[i].pos);
 		pos = pos + vel;
 		XMStoreFloat3(&mParticles[i].pos, pos);
 	}
-	UpdateParticleVB();
+	UpdateParticleVB();*/
 
 	//update player
 	mPlayer->Update(dt);
-	mPlayer->AddForce(XMVectorSet(0.0f, -9.81f, 0.0f, 0.0f));   //adds gravity
+	mPlayer->AddForce(XMVectorSet(0.0f, -9.8f, 0.0f, 0.0f));   //adds gravity
 	//update enemy damage done to player
 	for (int i = 0; i < enemies.size(); ++i)
 	{
 		if (PlayerEnemyCollision(mPlayer, enemies[i]) && recoverTime == 0.0f)
 		{
 			enemies[i]->ApplyDamage(mPlayer);
-			std::wstringstream ss;
-			ss << mPlayer->GetHealth();
-			OutputDebugString(ss.str().c_str());
-			OutputDebugString(L"\n");
-			recoverTime = 3.0f;   //player has a 3s vunerability timer
+			recoverTime = 3.0f;   //player has 3 seconds before damage can be done to him again
 		}
 	}
 	if (mPlayer->GetHealth() == 0)
-	{
+	{ 
 		//switch to game over state to display game over screen
 	}
 
@@ -982,6 +992,12 @@ void InClassProj::UpdateScene(float dt)
 			enemies.erase(enemies.begin() + i);
 			i--;
 			break;
+		}
+
+		//when all enemies eliminated:
+		if (enemies.size() == 0)
+		{
+			//draw end of level obj and once collected either switch to game won state or level2 state
 		}
 	}
 
@@ -1023,7 +1039,6 @@ void InClassProj::UpdateScene(float dt)
 				mProjectiles.erase(mProjectiles.begin() + i);
 				i--;
 				break;
-				
 			}
 		}
 	}
@@ -1034,7 +1049,6 @@ void InClassProj::UpdateScene(float dt)
 
 void InClassProj::DrawScene()
 {
-
 	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::White));
 	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 
@@ -1073,21 +1087,6 @@ void InClassProj::DrawScene()
 
 	mBG->Draw(vp, md3dImmediateContext, mLitTexEffect);
 
-	ID3D11RasterizerState* rs;
-	D3D11_RASTERIZER_DESC rsd;
-	rsd.CullMode = D3D11_CULL_NONE;
-	rsd.AntialiasedLineEnable = false;
-	rsd.DepthBias = 0.0f;
-	rsd.DepthBiasClamp = 0.0f;
-	rsd.DepthClipEnable = true;
-	rsd.FillMode = D3D11_FILL_SOLID;
-	rsd.FrontCounterClockwise = true;
-	rsd.MultisampleEnable = true;
-	rsd.ScissorEnable = false;
-	rsd.SlopeScaledDepthBias = 0.0f;
-	md3dDevice->CreateRasterizerState(&rsd, &rs);
-	md3dImmediateContext->RSSetState(rs);
-
 	//draw player
 	if (isFacingRight)
 	{
@@ -1112,7 +1111,7 @@ void InClassProj::DrawScene()
 		mProjectiles[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
 	}
 
-	DrawParticles();
+	//DrawParticles();
 	md3dImmediateContext->OMSetDepthStencilState(0, 0);
 	md3dImmediateContext->OMSetBlendState(0, blendFactor, 0xffffffff);
 
@@ -1125,10 +1124,8 @@ void InClassProj::OnMouseDown(WPARAM btnState, int x, int y)
 {
 	mLastMousePos.x = x;
 	mLastMousePos.y = y;
-
-	if ((btnState & MK_RBUTTON) != 0)
-	{
-	}
+	
+	//left mouse button will eventually be used for menu selections not particles
 	if ((btnState & MK_LBUTTON) != 0)
 	{
 		JetpackParticle newParticle;
@@ -1200,14 +1197,14 @@ void InClassProj::UpdateKeyboardInput(float dt)
 			if (isFacingRight)
 			{
 				Projectile* arrowProjectile = new Projectile(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - 8, 0.0f, 0.0f),
-					XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, XMVectorSet(250.0f, 0.0f, 0.0f, 0.0f));
+					XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, 0.0f, XMVectorSet(250.0f, 0.0f, 0.0f, 0.0f));
 				mProjectiles.push_back(arrowProjectile);
 				canShoot = false;
 			}
 			if (!isFacingRight)
 			{
 				Projectile* arrowProjectile = new Projectile(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - 8, 0.0f, 0.0f),
-					XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, XMVectorSet(-250.0f, 0.0f, 0.0f, 0.0f));
+					XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, 0.0f, XMVectorSet(-250.0f, 0.0f, 0.0f, 0.0f));
 				mProjectiles.push_back(arrowProjectile);
 				canShoot = false;
 			}
