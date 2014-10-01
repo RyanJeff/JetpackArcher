@@ -93,6 +93,10 @@ private:
 	SpotLightOptimized mSpotLight;
 
 	Sprite* mBG;
+	Sprite* mGreenHBar;
+	std::vector<Sprite*> greenBarVec;
+	Sprite* mRedHBar;
+	std::vector<Sprite*> redBarVec;
 
 	Player* mPlayer;
 	Enemy* mEnemy1;
@@ -135,6 +139,9 @@ private:
 	BoundingBoxes::BoundingBox bb31;
 	std::vector<BoundingBoxes::BoundingBox> boxes;
 
+	Sprite* EOLobj;   //end of level object
+	BoundingBoxes::BoundingBox EOLobjBB;
+
 	std::vector<Projectile*> mProjectiles;
 	Sprite::Frame* projectileFrame = new Sprite::Frame();
 
@@ -152,12 +159,23 @@ private:
 	POINT mLastMousePos;
 
 public:
+	std::vector<Sprite::Frame*> hbFrameG;
+	std::vector<Sprite::Frame*> hbFrameR;
 	std::vector<Sprite::Frame*> projFrame;
+	std::vector<Sprite::Frame*> EOLobjFrames;
+
 	float cooldownTimer = 0.0f;
 	bool canShoot = true;
 	bool isFacingRight = true;
-	bool playerHit = false;
 	float recoverTime = 0.0f;
+
+	float currHealth;
+	float maxHealth;
+	float ratio;
+	float redXPos;
+	float redXScale;
+
+	bool EOLobjActive = false;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd)
@@ -176,7 +194,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 }
 
 InClassProj::InClassProj(HINSTANCE hInstance) : 
-	D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0)
+	D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0),
+	mGreenHBar(0), mRedHBar(0), EOLobj(0)
 {
 	XMVECTOR pos = XMVectorSet(1.0f, 1.0f, 5.0f, 0.0f);
 	XMVECTOR look = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
@@ -213,6 +232,12 @@ InClassProj::~InClassProj()
 		if (enemies[i])
 			delete enemies[i];
 	}
+
+	if (mGreenHBar)
+		delete mGreenHBar;
+
+	if (mRedHBar)
+		delete mRedHBar;
 
 	if (mBG)
 		delete mBG;
@@ -449,6 +474,55 @@ bool InClassProj::Init()
 	enemyFrame3->image = enemyImage3;
 	enemyFrames3.push_back(enemyFrame3);
 
+	//enemy green health bar image
+	Sprite::Frame* greenHBFrame = new Sprite::Frame();
+	ID3D11ShaderResourceView* greenHBimage;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/greenHealth.png", 0, 0, &greenHBimage, 0);
+	greenHBFrame->imageWidth = 32;
+	greenHBFrame->imageHeight = 8;
+	greenHBFrame->x = 0;
+	greenHBFrame->y = 0;
+	greenHBFrame->image = greenHBimage;
+	hbFrameG.push_back(greenHBFrame);
+	//enemy red health bar image
+	Sprite::Frame* redHBFrame = new Sprite::Frame();
+	ID3D11ShaderResourceView* redHBimage;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/redHealth.png", 0, 0, &redHBimage, 0);
+	redHBFrame->imageWidth = 32;
+	redHBFrame->imageHeight = 8;
+	redHBFrame->x = 0;
+	redHBFrame->y = 0;
+	redHBFrame->image = redHBimage;
+	hbFrameR.push_back(redHBFrame);
+
+	//end of level object image
+	Sprite::Frame* EOLobjFrame = new Sprite::Frame();
+	ID3D11ShaderResourceView* EOLobjImg;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/EOLobj.png", 0, 0, &EOLobjImg, 0);
+	//EOLobj frame1
+	EOLobjFrame->imageWidth = 192;
+	EOLobjFrame->imageHeight = 64;
+	EOLobjFrame->x = 0;
+	EOLobjFrame->y = 0;
+	EOLobjFrame->image = EOLobjImg;
+	EOLobjFrames.push_back(EOLobjFrame);
+	//EOLobj frame2
+	EOLobjFrame = new Sprite::Frame();
+	EOLobjFrame->imageWidth = 192;
+	EOLobjFrame->imageHeight = 64;
+	EOLobjFrame->x = 64;
+	EOLobjFrame->y = 0;
+	EOLobjFrame->image = EOLobjImg;
+	EOLobjFrames.push_back(EOLobjFrame);
+	//EOLobj frame3
+	EOLobjFrame = new Sprite::Frame();
+	EOLobjFrame->imageWidth = 192;
+	EOLobjFrame->imageHeight = 64;
+	EOLobjFrame->x = 128;
+	EOLobjFrame->y = 0;
+	EOLobjFrame->image = EOLobjImg;
+	EOLobjFrames.push_back(EOLobjFrame);
+
 	//background
 	mBG = new Sprite(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
 		1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice, 0.0f);
@@ -457,16 +531,29 @@ bool InClassProj::Init()
 		32, 32, 0.1f, frames, 0.25f, md3dDevice, 5.0f);
 	//enemy1
 	mEnemy1 = new Enemy(XMVectorSet(800.0f, 500.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
-		32.0f, 32.0f, 0.1f, enemyFrames1, 0.25f, md3dDevice, 5.0f);
+		32.0f, 32.0f, 0.1f, enemyFrames1, 0.25f, md3dDevice, 1.0f);
 	enemies.push_back(mEnemy1);
 	//enemy2
 	mEnemy2 = new Enemy(XMVectorSet(600.0f, 700.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32.0f, 32.0f, 0.1f, enemyFrames2, 0.25f, md3dDevice, 5.0f);
+		32.0f, 32.0f, 0.1f, enemyFrames2, 0.25f, md3dDevice, 1.0f);
 	enemies.push_back(mEnemy2);
 	//enemy3
 	mEnemy3 = new Enemy(XMVectorSet(800, 200.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32.0f, 32.0f, 0.1f, enemyFrames3, 0.25f, md3dDevice, 5.0f);
+		32.0f, 32.0f, 0.1f, enemyFrames3, 0.25f, md3dDevice, 1.0f);
 	enemies.push_back(mEnemy3);
+	//enemy health bars
+	for (int i = 0; i < enemies.size(); ++i)
+	{
+		mGreenHBar = new Sprite(XMVectorSet(enemies[i]->GetPos().m128_f32[0], enemies[i]->GetPos().m128_f32[1] + 32, 0.0f, 0.0f),
+			XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 32.0f, 8.0f, 1.0f, hbFrameG, 0.25f, md3dDevice, 0.0f);
+		greenBarVec.push_back(mGreenHBar);
+		mRedHBar = new Sprite(XMVectorSet(redXPos, enemies[i]->GetPos().m128_f32[1] + 32, 0.0f, 0.0f),
+			XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 32.0f, 8.0f, 1.0f, hbFrameR, 0.25f, md3dDevice, 0.0f);
+		redBarVec.push_back(mRedHBar);
+	}
+	//end of level object
+	EOLobj = new Sprite(XMVectorSet(mClientWidth / 2.0f, mClientHeight - 64.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		64.0f, 64.0f, 1.0f, EOLobjFrames, 0.25f, md3dDevice, 0.0f);
 
 	mPlayer->Play(true);
 
@@ -645,6 +732,12 @@ void InClassProj::InitBoundingBoxes()
 	bb31.height = 45.0f;
 	bb31.width = 40.0f;
 	boxes.push_back(bb31);
+
+	//end of level object bounding box
+	EOLobjBB.pos.x = mClientWidth / 2.0f; 
+	EOLobjBB.pos.y = mClientHeight - 64.0f;
+	EOLobjBB.height = 60.0f;
+	EOLobjBB.width = 60.0f;
 }
 
 void InClassProj::BuildBlendStates()
@@ -976,6 +1069,17 @@ void InClassProj::UpdateScene(float dt)
 		enemies[i]->Update(dt);
 		enemies[i]->Chase(enemies, mPlayer, dt);
 
+		//set health bars to above enemies' heads and red bar to adjust accordingly
+		redXPos = enemies[i]->GetPos().m128_f32[0];
+		currHealth = enemies[i]->GetHealth();
+		maxHealth = 5.0f;
+		ratio = 1.0f - (currHealth / maxHealth);
+		redXPos += ((1.0f - ratio) / 2.0f) * 32.0f;
+		redXScale = ratio/* * 32.0f*/;
+		greenBarVec[i]->SetPos(XMVectorSet(enemies[i]->GetPos().m128_f32[0], enemies[i]->GetPos().m128_f32[1] + 32, 0.0f, 0.0f));
+		redBarVec[i]->SetPos(XMVectorSet(redXPos, enemies[i]->GetPos().m128_f32[1] + 32, 0.0f, 0.0f));
+		redBarVec[i]->SetScale(XMVectorSet(redXScale, 1.0f, 0.0f, 0.0f));
+
 		//collision checks between enemies and playerBB		
 		SpriteRectCollision(enemies[i], playerBB);
 
@@ -993,12 +1097,11 @@ void InClassProj::UpdateScene(float dt)
 			i--;
 			break;
 		}
-
-		//when all enemies eliminated:
-		if (enemies.size() == 0)
-		{
-			//draw end of level obj and once collected either switch to game won state or level2 state
-		}
+	}
+	//when all enemies eliminated:
+	if (enemies.size() == 0)
+	{
+  		EOLobjActive = true;
 	}
 
 	//collision between playerBB and environmentBBs
@@ -1042,6 +1145,8 @@ void InClassProj::UpdateScene(float dt)
 			}
 		}
 	}
+
+	EOLobj->Update(dt);
 		
 	//update sounds
 	sys->update();
@@ -1103,6 +1208,10 @@ void InClassProj::DrawScene()
 	for (int i = 0; i < enemies.size(); ++i)
 	{
 		enemies[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
+
+		//draw enemy health bars
+		greenBarVec[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
+		redBarVec[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
 	}
 
 	//draw arrow projectiles
@@ -1111,7 +1220,14 @@ void InClassProj::DrawScene()
 		mProjectiles[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
 	}
 
-	//DrawParticles();
+	//draw end of level object
+	if (EOLobjActive)
+	{
+		EOLobj->Draw(vp, md3dImmediateContext, mLitTexEffect);
+		//EOLobj->Play(true);
+	}
+
+	DrawParticles();
 	md3dImmediateContext->OMSetDepthStencilState(0, 0);
 	md3dImmediateContext->OMSetBlendState(0, blendFactor, 0xffffffff);
 
