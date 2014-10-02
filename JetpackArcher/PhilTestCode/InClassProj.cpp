@@ -25,6 +25,10 @@ Controls - LEFT ARROW to move left
 #include "Sprite.h"
 #include "xnacollision.h"
 #include "fmod.hpp"
+#include "MainMenu.h"
+#include "Game.h"
+#include "Credits.h"
+#include "Splash.h"
 
 struct JetpackParticle
 {
@@ -43,6 +47,14 @@ class InClassProj : public D3DApp
 		right,
 		bot,
 		left
+	};
+
+	enum States
+	{
+		SPLASH,
+		MAINMENU,
+		GAME,
+		CREDITS,
 	};
 
 public:
@@ -73,8 +85,12 @@ private:
 	CollisionSide RectRectCollision(BoundingBoxes::BoundingBox r1, BoundingBoxes::BoundingBox r2, Sprite* sprite);
 	void InClassProj::SpriteRectCollision(Sprite* sprite, BoundingBoxes::BoundingBox bb);
 	bool EnemyProjCollision(Sprite* sprite, Projectile* arrow);
+	bool PlayerEnemyCollision(Sprite* player, Sprite* enemy);
 
 	void DrawParticles();
+
+	int GetState();
+	void SetState(int state);
 
 private:
 	LitTexEffect* mLitTexEffect;
@@ -151,10 +167,21 @@ private:
 	bool mMouseReleased;
 	POINT mLastMousePos;
 
+	//state pointers
+	MainMenu* mainmenu;
+	Game* game;
+	Credits* credits;
+	Splash* splash;
+
+	int mCurrState;
+
 public:
 	std::vector<Sprite::Frame*> projFrame;
 	float cooldownTimer = 0.0f;
 	bool canShoot = true;
+	bool isFacingRight = true;
+	bool playerHit = false;
+
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd)
@@ -172,8 +199,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 	return theApp.Run();
 }
 
+//TODO: Change mCurrState to initalize to SPLASH.
 InClassProj::InClassProj(HINSTANCE hInstance) : 
-D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0)
+D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0), mCurrState(0) 
 {
 	XMVECTOR pos = XMVectorSet(1.0f, 1.0f, 5.0f, 0.0f);
 	XMVECTOR look = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
@@ -211,6 +239,12 @@ InClassProj::~InClassProj()
 			delete enemies[i];
 	}
 
+	if (mainmenu)
+	{
+		//delete mainmenu;
+		//mainmenu = 0;
+	}
+
 	if (mBG)
 		delete mBG;
 
@@ -233,9 +267,10 @@ InClassProj::~InClassProj()
 		ReleaseCOM(mNoDepthDS);
 }
 
+
 void InClassProj::BuildSceneLights()
 {
-	/* test code, test a point light out */
+	// test code, test a point light out 
 	mPointLight.pos = XMFLOAT3(50.0f, 50.0f, 50.0f);
 	mPointLight.lightColour = XMFLOAT4(0.75f, 0.75f, 0.75f, 1.0f);
 	mPointLight.range = 1000.0f;
@@ -254,6 +289,7 @@ void InClassProj::BuildSceneLights()
 
 	mAmbientColour = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 }
+
 
 FMOD_RESULT result;
 FMOD::System     *sys;
@@ -299,19 +335,21 @@ bool InClassProj::Init()
 	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/TestAdditive.png", 0, 0, &mParticleTexture, 0);
 
 	BuildBlendStates();
-	BuildDSStates();
+	BuildDSStates();	
 
 	//font
 	ID3D11ShaderResourceView* font;
 	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/font.png", 0, 0, &font, 0);
 	mFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
 
+	//Move needed code to Game Init()
+	
 	//projectile image
 	ID3D11ShaderResourceView* projImage;
 	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/arrow.png", 0, 0, &projImage, 0);
 	//projectile frame
-	projectileFrame->imageWidth = 32;
-	projectileFrame->imageHeight = 32;
+	projectileFrame->imageWidth = 22;
+	projectileFrame->imageHeight = 9;
 	projectileFrame->x = 0;
 	projectileFrame->y = 0;
 	projectileFrame->image = projImage;
@@ -475,8 +513,9 @@ bool InClassProj::Init()
 	//result = sys->playSound(sound1, 0, false, &channel);
 
 	InitBoundingBoxes();
-
+	
 	return true;
+	
 }
 
 void InClassProj::InitBoundingBoxes()
@@ -880,17 +919,51 @@ bool InClassProj::EnemyProjCollision(Sprite* sprite, Projectile* arrow)
 	}
 }
 
+//for player health decrementing
+bool InClassProj::PlayerEnemyCollision(Sprite* player, Sprite* enemy)
+{
+	float r1CentreX = player->GetPos().m128_f32[0] + player->GetWidth() / 2;
+	float r1CentreY = player->GetPos().m128_f32[1] + player->GetHeight() / 2;
+
+	float p1CentreX = enemy->GetPos().m128_f32[0] + enemy->GetWidth() / 2;
+	float p1CentreY = enemy->GetPos().m128_f32[1] + enemy->GetHeight() / 2;
+
+	float diffX = r1CentreX - p1CentreX;
+	float diffY = r1CentreY - p1CentreY;
+	float halfWidths = (player->GetWidth() + enemy->GetWidth()) / 2;
+	float halfHeights = (player->GetHeight() + enemy->GetHeight()) / 2;
+
+	float overlapX = halfWidths - abs(diffX);
+	float overlapY = halfHeights - abs(diffY);
+
+	if (overlapX > 0 && overlapY > 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+float recoverTime = 0.0f;
 void InClassProj::UpdateScene(float dt)
 {
+	if (recoverTime > 0.0f)
+	{
+		recoverTime = recoverTime - dt;
+	}
+	else
+	{
+		recoverTime = 0.0f;
+	}
+
 	playerBB.pos.x = mPlayer->GetPos().m128_f32[0];
 	playerBB.pos.y = mPlayer->GetPos().m128_f32[1];
 
 	UpdateKeyboardInput(dt);
 	
 	m2DCam->Update();
-
-	//for jetpack usage: Checks to see if the recharge is happening, if so updates the cooldown.
-	mPlayer->RechargeJetpack(dt);
 
 	//update particles
 	for (int i = 0; i < mParticles.size(); ++i)
@@ -905,6 +978,23 @@ void InClassProj::UpdateScene(float dt)
 	//update player
 	mPlayer->Update(dt);
 	mPlayer->AddForce(XMVectorSet(0.0f, -9.81f, 0.0f, 0.0f));   //adds gravity
+	//update enemy damage done to player
+	for (int i = 0; i < enemies.size(); ++i)
+	{
+		if (PlayerEnemyCollision(mPlayer, enemies[i]) && recoverTime == 0.0f)
+		{
+			enemies[i]->ApplyDamage(mPlayer);
+			std::wstringstream ss;
+			ss << mPlayer->GetHealth();
+			OutputDebugString(ss.str().c_str());
+			OutputDebugString(L"\n");
+			recoverTime = 3.0f;   //player has a 3s vunerability timer
+		}
+	}
+	if (mPlayer->GetHealth() == 0)
+	{
+		//switch to game over state to display game over screen
+	}
 
 	//update enemies
 	for (int i = 0; i < enemies.size(); ++i)
@@ -920,17 +1010,23 @@ void InClassProj::UpdateScene(float dt)
 		{
 			SpriteRectCollision(enemies[i], boxes[j]);
 		}
+
+		//delete enemy upon death
+		if (enemies[i]->GetHealth() == 0)
+		{
+			delete enemies[i];
+			enemies.erase(enemies.begin() + i);
+			i--;
+			break;
+		}
 	}
 
 	//collision between playerBB and environmentBBs
 	for (int i = 0; i < boxes.size(); ++i)
 	{
 		RectRectCollision(playerBB, boxes[i], mPlayer);
-	}
 
-	//updating mGrounded bool for player jump
-	for (int i = 0; i < boxes.size(); ++i)
-	{
+		//update mGrounded bool for player jump
 		if (RectRectCollision(playerBB, boxes[i], mPlayer) == CollisionSide::bot)
 		{
 			mPlayer->HitGround();
@@ -943,7 +1039,8 @@ void InClassProj::UpdateScene(float dt)
  		mProjectiles[i]->Update(dt);
 		for (int j = 0; j < enemies.size(); ++j)
 		{
-			if (mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MAX_DISTANCE)
+			if (mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MAX_DISTANCE ||
+				mProjectiles[i]->GetDistanceTravelled() < mProjectiles[i]->MIN_DISTANCE)
 			{
 				delete mProjectiles[i];
 				mProjectiles.erase(mProjectiles.begin() + i);
@@ -953,13 +1050,16 @@ void InClassProj::UpdateScene(float dt)
 			//collision checks between enemies and projectiles	
 			if (EnemyProjCollision(enemies[j], mProjectiles[i]))
 			{
+				mProjectiles[i]->ApplyDamage(enemies[j]);
+				/*std::wstringstream ss;
+				ss << enemies[j]->GetHealth();
+				OutputDebugString(ss.str().c_str());
+				OutputDebugString(L"\n");*/
 				delete mProjectiles[i];
 				mProjectiles.erase(mProjectiles.begin() + i);
 				i--;
-				delete enemies[j];
-				enemies.erase(enemies.begin() + j);
-				j--;
- 				break;
+				break;
+				
 			}
 		}
 	}
@@ -970,12 +1070,31 @@ void InClassProj::UpdateScene(float dt)
 
 void InClassProj::DrawScene()
 {
+	//state switch.
+	switch (GetState())
+	{
+	case 0:
+		break;
+	case 1:
+		return;
+	}
+
 	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::White));
-	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
+	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	md3dImmediateContext->IASetInputLayout(Vertex::GetNormalTexVertLayout());
-    md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	
+	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	md3dImmediateContext->OMSetBlendState(mTransparentBS, blendFactor, 0xffffffff);
+	md3dImmediateContext->OMSetDepthStencilState(mFontDS, 0);
+	
+	
+	
+	
+	//Move this to Game and call it from the switch
+	
 	XMVECTOR ambient = XMLoadFloat4(&mAmbientColour);
 
 	XMVECTOR eyePos = XMVectorSet(m2DCam->GetPos().m128_f32[0], m2DCam->GetPos().m128_f32[1], m2DCam->GetPos().m128_f32[2], 0.0f);
@@ -996,7 +1115,6 @@ void InClassProj::DrawScene()
 	md3dImmediateContext->IASetInputLayout(Vertex::GetNormalTexVertLayout());
 	md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	md3dImmediateContext->OMSetBlendState(mTransparentBS, blendFactor, 0xffffffff);
 	md3dImmediateContext->OMSetDepthStencilState(mFontDS, 0);
 	
@@ -1023,19 +1141,18 @@ void InClassProj::DrawScene()
 	md3dDevice->CreateRasterizerState(&rsd, &rs);
 	md3dImmediateContext->RSSetState(rs);
 
-	//Draw Player
-
-	if (mPlayer->GetFacing() == FALSE)
-	{
-		mPlayer->SetScale(XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f));
-	}
-	else if (mPlayer->GetFacing() == TRUE)
+	//draw player
+	if (isFacingRight)
 	{
 		mPlayer->SetScale(XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f));
 	}
-
+	else if (!isFacingRight)
+	{
+		mPlayer->SetScale(XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f));
+	}
 	mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
 	md3dImmediateContext->RSSetState(0);
+	
 	//draw enemies
 	for (int i = 0; i < enemies.size(); ++i)
 	{
@@ -1053,7 +1170,7 @@ void InClassProj::DrawScene()
 	md3dImmediateContext->OMSetBlendState(0, blendFactor, 0xffffffff);
 
 	//mFont->DrawFont(md3dImmediateContext, XMVectorSet(10.0f, 500.0f, 0.0f, 0.0f), 50, 75, 10, "Hi Brandon, you are a good student");
-
+	
 	HR(mSwapChain->Present(1, 0));
 }
 
@@ -1095,30 +1212,46 @@ void InClassProj::OnMouseMove(WPARAM btnState, int x, int y)
 	mLastMousePos.y = y;
 }
 
+float timerTest = 0.0f;
+bool runTimerTest = false;
 void InClassProj::UpdateKeyboardInput(float dt)
 {
+	if (runTimerTest)
+	{
+		timerTest += dt;
+		if (timerTest >= 3.0f)
+		{
+			timerTest = 0.0f;
+			runTimerTest = false;
+		}
+	}
+		
+
 	float move = 0.0f;
 	move = dt * 100;
 	if (GetAsyncKeyState(VK_LEFT) & 0x8000)
 	{
-		if (mPlayer->GetFacing() == TRUE)
+		if (isFacingRight)
 		{
-			mPlayer->SetFacing();
+			isFacingRight = false;
 		}
 		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] - move, mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f));
 	}
 	if (GetAsyncKeyState(VK_RIGHT) & 0x8000)
 	{
-		if (mPlayer->GetFacing() == FALSE)
+		if (!isFacingRight)
 		{
-			mPlayer->SetFacing();
+			isFacingRight = true;
 		}
 		mPlayer->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] + move, mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f));
 	}
 	if (GetAsyncKeyState(VK_UP) & 0x8000)
 	{
-		//jump
-		mPlayer->Jump();
+		if (!GetAsyncKeyState(VK_LSHIFT))
+		{
+			//jump
+			mPlayer->Jump();
+		}
 	}
 	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000)
 	{
@@ -1130,10 +1263,20 @@ void InClassProj::UpdateKeyboardInput(float dt)
 		//shoot arrows
 		if (canShoot)
 		{
-			Projectile* arrowProjectile = new Projectile(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1], 0.0f, 0.0f),
-				XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 32, 32, 0.5f, projFrame, 0.25f, md3dDevice, XMVectorSet(350.0f, 0.0f, 0.0f, 0.0f));
-			mProjectiles.push_back(arrowProjectile);
-			canShoot = false;
+			if (isFacingRight)
+			{
+				Projectile* arrowProjectile = new Projectile(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - 8, 0.0f, 0.0f),
+					XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, XMVectorSet(250.0f, 0.0f, 0.0f, 0.0f));
+				mProjectiles.push_back(arrowProjectile);
+				canShoot = false;
+			}
+			if (!isFacingRight)
+			{
+				Projectile* arrowProjectile = new Projectile(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - 8, 0.0f, 0.0f),
+					XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, XMVectorSet(-250.0f, 0.0f, 0.0f, 0.0f));
+				mProjectiles.push_back(arrowProjectile);
+				canShoot = false;
+			}
 		}
 		else
 		{
@@ -1151,6 +1294,25 @@ void InClassProj::UpdateKeyboardInput(float dt)
 		if (!isPlaying)
 		{
 			result = sys->playSound(sound1, 0, false, &channel);
+		}
+	}
+
+	//for testing states
+	if (GetAsyncKeyState(VK_RSHIFT) & 0x8000)
+	{
+		if (!runTimerTest)
+		{
+			runTimerTest = true;
+			if (mCurrState == 0)
+			{
+				SetState(1);
+				return;
+			}
+
+			else if (mCurrState == 1)
+			{
+				SetState(0);
+			}
 		}
 	}
 }
@@ -1188,4 +1350,14 @@ void InClassProj::DrawParticles()
 
 	md3dImmediateContext->OMSetBlendState(0, blendFactor, 0xffffffff);
 	md3dImmediateContext->OMSetDepthStencilState(NULL, 0);
+}
+
+void InClassProj::SetState(int state)
+{
+	mCurrState = state;
+}
+
+int InClassProj::GetState()
+{
+	return mCurrState;
 }
