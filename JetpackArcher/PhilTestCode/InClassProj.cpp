@@ -29,6 +29,8 @@ Controls - LEFT ARROW to move left
 #include "Game.h"
 #include "Credits.h"
 #include "Splash.h"
+#include "GameOver.h"
+#include "GameWon.h"
 
 struct JetpackParticle
 {
@@ -55,6 +57,8 @@ class InClassProj : public D3DApp
 		MAINMENU,
 		GAME,
 		CREDITS,
+		GAMEWON,
+		GAMEOVER
 	};
 
 public:
@@ -172,8 +176,14 @@ private:
 	Game* game;
 	Credits* credits;
 	Splash* splash;
+	GameOver* gameOver;
+	GameWon* gameWon;
 
 	int mCurrState;
+	int mPrevState;
+	
+	//Timer for splash screen
+	float splashTimer;
 
 public:
 	std::vector<Sprite::Frame*> projFrame;
@@ -201,7 +211,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
 //TODO: Change mCurrState to initalize to SPLASH.
 InClassProj::InClassProj(HINSTANCE hInstance) : 
-D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0), mCurrState(0) 
+D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0), mCurrState(SPLASH), mPrevState(-1), splashTimer(0.0f)
 {
 	XMVECTOR pos = XMVectorSet(1.0f, 1.0f, 5.0f, 0.0f);
 	XMVECTOR look = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
@@ -218,6 +228,12 @@ D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0)
 	XMStoreFloat4x4(&m2DProj, I);
 
 	srand((UINT)time(NULL));
+
+	//initalize state pointers to 0
+	mainmenu = 0;
+	game = 0;
+	credits = 0;
+	splash = 0;
 }
 
 InClassProj::~InClassProj()
@@ -241,8 +257,8 @@ InClassProj::~InClassProj()
 
 	if (mainmenu)
 	{
-		//delete mainmenu;
-		//mainmenu = 0;
+		mainmenu = 0;
+		delete mainmenu;
 	}
 
 	if (mBG)
@@ -335,184 +351,207 @@ bool InClassProj::Init()
 	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/TestAdditive.png", 0, 0, &mParticleTexture, 0);
 
 	BuildBlendStates();
-	BuildDSStates();	
+	BuildDSStates();
 
-	//font
-	ID3D11ShaderResourceView* font;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/font.png", 0, 0, &font, 0);
-	mFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
-
-	//Move needed code to Game Init()
-	
-	//projectile image
-	ID3D11ShaderResourceView* projImage;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/arrow.png", 0, 0, &projImage, 0);
-	//projectile frame
-	projectileFrame->imageWidth = 22;
-	projectileFrame->imageHeight = 9;
-	projectileFrame->x = 0;
-	projectileFrame->y = 0;
-	projectileFrame->image = projImage;
-	projFrame.push_back(projectileFrame);
-
-	//bg image
-	Sprite::Frame* BGFrame = new Sprite::Frame();
-	ID3D11ShaderResourceView* BGimage;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/TFAbgTiled.png", 0, 0, &BGimage, 0);
-	//bg frame
-	BGFrame->imageWidth = 1024;
-	BGFrame->imageHeight = 768;
-	BGFrame->x = 0;
-	BGFrame->y = 0;
-	BGFrame->image = BGimage;
-	std::vector<Sprite::Frame*> bgFrame;
-	bgFrame.push_back(BGFrame);
-
-	//Player spritesheet image
-	Sprite::Frame* newFrame = new Sprite::Frame();
-	ID3D11ShaderResourceView* image;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/player.png", 0, 0, &image, 0);  //test (has walk right only)
-	//player frame1
-	newFrame->imageWidth = 96;
-	newFrame->imageHeight = 96;
-	newFrame->x = 0;
-	newFrame->y = 0;
-	newFrame->image = image;
-	std::vector<Sprite::Frame*> frames;
-	frames.push_back(newFrame);
-	//player frame2
-	newFrame = new Sprite::Frame();
-	newFrame->imageWidth = 96;
-	newFrame->imageHeight = 96;
-	newFrame->x = 32;
-	newFrame->y = 0;
-	newFrame->image = image;
-	frames.push_back(newFrame);
-	//player frame3
-	newFrame = new Sprite::Frame();
-	newFrame->imageWidth = 96;
-	newFrame->imageHeight = 96;
-	newFrame->x = 64;
-	newFrame->y = 0;
-	newFrame->image = image;
-	frames.push_back(newFrame);
-
-	//Enemy1 spritesheet image
-	Sprite::Frame* enemyFrame1 = new Sprite::Frame();
-	ID3D11ShaderResourceView* enemyImage1;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip1.png", 0, 0, &enemyImage1, 0);
-	//Enemy1 frame1
-	enemyFrame1->imageWidth = 96;
-	enemyFrame1->imageHeight = 32;
-	enemyFrame1->x = 0;
-	enemyFrame1->y = 0;
-	enemyFrame1->image = enemyImage1;
-	std::vector<Sprite::Frame*> enemyFrames1;
-	enemyFrames1.push_back(enemyFrame1);
-	//Enemy1 frame2
-	enemyFrame1 = new Sprite::Frame();
-	enemyFrame1->imageWidth = 96;
-	enemyFrame1->imageHeight = 32;
-	enemyFrame1->x = 32;
-	enemyFrame1->y = 0;
-	enemyFrame1->image = enemyImage1;
-	enemyFrames1.push_back(enemyFrame1);
-	//Enemy1 frame3
-	enemyFrame1 = new Sprite::Frame();
-	enemyFrame1->imageWidth = 96;
-	enemyFrame1->imageHeight = 32;
-	enemyFrame1->x = 64;
-	enemyFrame1->y = 0;
-	enemyFrame1->image = enemyImage1;
-	enemyFrames1.push_back(enemyFrame1);
-
-	//Enemy2 spritesheet image
-	Sprite::Frame* enemyFrame2 = new Sprite::Frame();
-	ID3D11ShaderResourceView* enemyImage2;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip2.png", 0, 0, &enemyImage2, 0);
-	//Enemy2 frame1
-	enemyFrame2->imageWidth = 96;
-	enemyFrame2->imageHeight = 32;
-	enemyFrame2->x = 0;
-	enemyFrame2->y = 0;
-	enemyFrame2->image = enemyImage2;
-	std::vector<Sprite::Frame*> enemyFrames2;
-	enemyFrames2.push_back(enemyFrame2);
-	//Enemy2 frame2
-	enemyFrame2 = new Sprite::Frame();
-	enemyFrame2->imageWidth = 96;
-	enemyFrame2->imageHeight = 32;
-	enemyFrame2->x = 32;
-	enemyFrame2->y = 0;
-	enemyFrame2->image = enemyImage2;
-	enemyFrames2.push_back(enemyFrame2);
-	//Enemy2 frame3
-	enemyFrame2 = new Sprite::Frame();
-	enemyFrame2->imageWidth = 96;
-	enemyFrame2->imageHeight = 32;
-	enemyFrame2->x = 64;
-	enemyFrame2->y = 0;
-	enemyFrame2->image = enemyImage2;
-	enemyFrames2.push_back(enemyFrame2);
-
-	//Enemy3 spritesheet image
-	Sprite::Frame* enemyFrame3 = new Sprite::Frame();
-	ID3D11ShaderResourceView* enemyImage3;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip3.png", 0, 0, &enemyImage3, 0);
-	//Enemy3 frame1
-	enemyFrame3->imageWidth = 96;
-	enemyFrame3->imageHeight = 32;
-	enemyFrame3->x = 0;
-	enemyFrame3->y = 0;
-	enemyFrame3->image = enemyImage3;
-	std::vector<Sprite::Frame*> enemyFrames3;
-	enemyFrames3.push_back(enemyFrame3);
-	//Enemy3 frame2
-	enemyFrame3 = new Sprite::Frame();
-	enemyFrame3->imageWidth = 96;
-	enemyFrame3->imageHeight = 32;
-	enemyFrame3->x = 32;
-	enemyFrame3->y = 0;
-	enemyFrame3->image = enemyImage3;
-	enemyFrames3.push_back(enemyFrame3);
-	//Enemy3 frame3
-	enemyFrame3 = new Sprite::Frame();
-	enemyFrame3->imageWidth = 96;
-	enemyFrame3->imageHeight = 32;
-	enemyFrame3->x = 64;
-	enemyFrame3->y = 0;
-	enemyFrame3->image = enemyImage3;
-	enemyFrames3.push_back(enemyFrame3);
-
-	//background
-	mBG = new Sprite(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
-		1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice);
-	//player
-	mPlayer = new Player(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32, 32, 0.1f, frames, 0.25f, md3dDevice);
-	//enemy1
-	mEnemy1 = new Enemy(XMVectorSet(800.0f, 500.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32.0f, 32.0f, 0.1f, enemyFrames1, 0.25f, md3dDevice);
-	enemies.push_back(mEnemy1);
-	//enemy2
-	mEnemy2 = new Enemy(XMVectorSet(600.0f, 700.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32.0f, 32.0f, 0.1f, enemyFrames2, 0.25f, md3dDevice);
-	enemies.push_back(mEnemy2);
-	//enemy3
-	mEnemy3 = new Enemy(XMVectorSet(800, 200.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32.0f, 32.0f, 0.1f, enemyFrames3, 0.25f, md3dDevice);
-	enemies.push_back(mEnemy3);
-
-	mPlayer->Play(true);
-
-	for (int i = 0; i < enemies.size(); ++i)
+	switch (GetState())
 	{
-		enemies[i]->Play(true);
+	case CREDITS:
+		break;
+	case SPLASH:
+		splash = new Splash;
+		splash->Init(md3dDevice, mClientWidth, mClientHeight);
+		break;
+	case MAINMENU:
+		mainmenu = new MainMenu;
+		mainmenu->Init(md3dDevice, mClientWidth, mClientHeight);
+		break;
+	case GAMEWON:
+		gameWon = new GameWon;
+		gameWon->Init(md3dDevice, mClientWidth, mClientHeight);
+		break;
+	case GAMEOVER:
+		gameOver = new GameOver;
+		gameOver->Init(md3dDevice, mClientWidth, mClientHeight);
+		break;
+	case GAME:
+
+		//font
+		ID3D11ShaderResourceView* font;
+		D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/font.png", 0, 0, &font, 0);
+		mFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
+
+		//projectile image
+		ID3D11ShaderResourceView* projImage;
+		D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/arrow.png", 0, 0, &projImage, 0);
+		//projectile frame
+		projectileFrame->imageWidth = 22;
+		projectileFrame->imageHeight = 9;
+		projectileFrame->x = 0;
+		projectileFrame->y = 0;
+		projectileFrame->image = projImage;
+		projFrame.push_back(projectileFrame);
+
+		//bg image
+		Sprite::Frame* BGFrame = new Sprite::Frame();
+		ID3D11ShaderResourceView* BGimage;
+		D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/TFAbgTiled.png", 0, 0, &BGimage, 0);
+		//bg frame
+		BGFrame->imageWidth = 1024;
+		BGFrame->imageHeight = 768;
+		BGFrame->x = 0;
+		BGFrame->y = 0;
+		BGFrame->image = BGimage;
+		std::vector<Sprite::Frame*> bgFrame;
+		bgFrame.push_back(BGFrame);
+
+		//Player spritesheet image
+		Sprite::Frame* newFrame = new Sprite::Frame();
+		ID3D11ShaderResourceView* image;
+		D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/player.png", 0, 0, &image, 0);  //test (has walk right only)
+		//player frame1
+		newFrame->imageWidth = 96;
+		newFrame->imageHeight = 96;
+		newFrame->x = 0;
+		newFrame->y = 0;
+		newFrame->image = image;
+		std::vector<Sprite::Frame*> frames;
+		frames.push_back(newFrame);
+		//player frame2
+		newFrame = new Sprite::Frame();
+		newFrame->imageWidth = 96;
+		newFrame->imageHeight = 96;
+		newFrame->x = 32;
+		newFrame->y = 0;
+		newFrame->image = image;
+		frames.push_back(newFrame);
+		//player frame3
+		newFrame = new Sprite::Frame();
+		newFrame->imageWidth = 96;
+		newFrame->imageHeight = 96;
+		newFrame->x = 64;
+		newFrame->y = 0;
+		newFrame->image = image;
+		frames.push_back(newFrame);
+
+		//Enemy1 spritesheet image
+		Sprite::Frame* enemyFrame1 = new Sprite::Frame();
+		ID3D11ShaderResourceView* enemyImage1;
+		D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip1.png", 0, 0, &enemyImage1, 0);
+		//Enemy1 frame1
+		enemyFrame1->imageWidth = 96;
+		enemyFrame1->imageHeight = 32;
+		enemyFrame1->x = 0;
+		enemyFrame1->y = 0;
+		enemyFrame1->image = enemyImage1;
+		std::vector<Sprite::Frame*> enemyFrames1;
+		enemyFrames1.push_back(enemyFrame1);
+		//Enemy1 frame2
+		enemyFrame1 = new Sprite::Frame();
+		enemyFrame1->imageWidth = 96;
+		enemyFrame1->imageHeight = 32;
+		enemyFrame1->x = 32;
+		enemyFrame1->y = 0;
+		enemyFrame1->image = enemyImage1;
+		enemyFrames1.push_back(enemyFrame1);
+		//Enemy1 frame3
+		enemyFrame1 = new Sprite::Frame();
+		enemyFrame1->imageWidth = 96;
+		enemyFrame1->imageHeight = 32;
+		enemyFrame1->x = 64;
+		enemyFrame1->y = 0;
+		enemyFrame1->image = enemyImage1;
+		enemyFrames1.push_back(enemyFrame1);
+
+		//Enemy2 spritesheet image
+		Sprite::Frame* enemyFrame2 = new Sprite::Frame();
+		ID3D11ShaderResourceView* enemyImage2;
+		D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip2.png", 0, 0, &enemyImage2, 0);
+		//Enemy2 frame1
+		enemyFrame2->imageWidth = 96;
+		enemyFrame2->imageHeight = 32;
+		enemyFrame2->x = 0;
+		enemyFrame2->y = 0;
+		enemyFrame2->image = enemyImage2;
+		std::vector<Sprite::Frame*> enemyFrames2;
+		enemyFrames2.push_back(enemyFrame2);
+		//Enemy2 frame2
+		enemyFrame2 = new Sprite::Frame();
+		enemyFrame2->imageWidth = 96;
+		enemyFrame2->imageHeight = 32;
+		enemyFrame2->x = 32;
+		enemyFrame2->y = 0;
+		enemyFrame2->image = enemyImage2;
+		enemyFrames2.push_back(enemyFrame2);
+		//Enemy2 frame3
+		enemyFrame2 = new Sprite::Frame();
+		enemyFrame2->imageWidth = 96;
+		enemyFrame2->imageHeight = 32;
+		enemyFrame2->x = 64;
+		enemyFrame2->y = 0;
+		enemyFrame2->image = enemyImage2;
+		enemyFrames2.push_back(enemyFrame2);
+
+		//Enemy3 spritesheet image
+		Sprite::Frame* enemyFrame3 = new Sprite::Frame();
+		ID3D11ShaderResourceView* enemyImage3;
+		D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemyStrip3.png", 0, 0, &enemyImage3, 0);
+		//Enemy3 frame1
+		enemyFrame3->imageWidth = 96;
+		enemyFrame3->imageHeight = 32;
+		enemyFrame3->x = 0;
+		enemyFrame3->y = 0;
+		enemyFrame3->image = enemyImage3;
+		std::vector<Sprite::Frame*> enemyFrames3;
+		enemyFrames3.push_back(enemyFrame3);
+		//Enemy3 frame2
+		enemyFrame3 = new Sprite::Frame();
+		enemyFrame3->imageWidth = 96;
+		enemyFrame3->imageHeight = 32;
+		enemyFrame3->x = 32;
+		enemyFrame3->y = 0;
+		enemyFrame3->image = enemyImage3;
+		enemyFrames3.push_back(enemyFrame3);
+		//Enemy3 frame3
+		enemyFrame3 = new Sprite::Frame();
+		enemyFrame3->imageWidth = 96;
+		enemyFrame3->imageHeight = 32;
+		enemyFrame3->x = 64;
+		enemyFrame3->y = 0;
+		enemyFrame3->image = enemyImage3;
+		enemyFrames3.push_back(enemyFrame3);
+
+		//background
+		mBG = new Sprite(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+			1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice);
+		//player
+		mPlayer = new Player(XMVectorSet(mClientWidth / 2.0f, mClientHeight / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+			32, 32, 0.1f, frames, 0.25f, md3dDevice);
+		//enemy1
+		mEnemy1 = new Enemy(XMVectorSet(800.0f, 500.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+			32.0f, 32.0f, 0.1f, enemyFrames1, 0.25f, md3dDevice);
+		enemies.push_back(mEnemy1);
+		//enemy2
+		mEnemy2 = new Enemy(XMVectorSet(600.0f, 700.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+			32.0f, 32.0f, 0.1f, enemyFrames2, 0.25f, md3dDevice);
+		enemies.push_back(mEnemy2);
+		//enemy3
+		mEnemy3 = new Enemy(XMVectorSet(800, 200.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+			32.0f, 32.0f, 0.1f, enemyFrames3, 0.25f, md3dDevice);
+		enemies.push_back(mEnemy3);
+
+		mPlayer->Play(true);
+
+		for (int i = 0; i < enemies.size(); ++i)
+		{
+			enemies[i]->Play(true);
+		}
+
+		//result = sys->playSound(sound1, 0, false, &channel);
+
+		InitBoundingBoxes();
+
+		break;
 	}
-
-	//result = sys->playSound(sound1, 0, false, &channel);
-
-	InitBoundingBoxes();
 	
 	return true;
 	
@@ -958,127 +997,142 @@ void InClassProj::UpdateScene(float dt)
 		recoverTime = 0.0f;
 	}
 
-	playerBB.pos.x = mPlayer->GetPos().m128_f32[0];
-	playerBB.pos.y = mPlayer->GetPos().m128_f32[1];
-
-	UpdateKeyboardInput(dt);
-	
 	m2DCam->Update();
 
-	//update particles
-	for (int i = 0; i < mParticles.size(); ++i)
+	switch (GetState())
 	{
-		XMVECTOR vel = XMLoadFloat3(&mParticles[i].vel);
-		XMVECTOR pos = XMLoadFloat3(&mParticles[i].pos);
-		pos = pos + vel;
-		XMStoreFloat3(&mParticles[i].pos, pos);
-	}
-	UpdateParticleVB();
+	case CREDITS:
+		break;
+	case SPLASH:
+		splash->UpdateScene(dt);
+		break;
+	case MAINMENU:
+		mainmenu->UpdateScene(dt);
+		break;
+	case GAMEWON:
+		gameWon->UpdateScene(dt);
+		break;
+	case GAMEOVER:
+		gameOver->UpdateScene(dt);
+		break;
+	case GAME:
 
-	//update player
-	mPlayer->Update(dt);
-	mPlayer->AddForce(XMVectorSet(0.0f, -9.81f, 0.0f, 0.0f));   //adds gravity
-	//update enemy damage done to player
-	for (int i = 0; i < enemies.size(); ++i)
-	{
-		if (PlayerEnemyCollision(mPlayer, enemies[i]) && recoverTime == 0.0f)
+		playerBB.pos.x = mPlayer->GetPos().m128_f32[0];
+		playerBB.pos.y = mPlayer->GetPos().m128_f32[1];
+
+		UpdateKeyboardInput(dt);
+
+		//update particles
+		for (int i = 0; i < mParticles.size(); ++i)
 		{
-			enemies[i]->ApplyDamage(mPlayer);
-			std::wstringstream ss;
-			ss << mPlayer->GetHealth();
-			OutputDebugString(ss.str().c_str());
-			OutputDebugString(L"\n");
-			recoverTime = 3.0f;   //player has a 3s vunerability timer
+			XMVECTOR vel = XMLoadFloat3(&mParticles[i].vel);
+			XMVECTOR pos = XMLoadFloat3(&mParticles[i].pos);
+			pos = pos + vel;
+			XMStoreFloat3(&mParticles[i].pos, pos);
 		}
-	}
-	if (mPlayer->GetHealth() == 0)
-	{
-		//switch to game over state to display game over screen
-	}
+		UpdateParticleVB();
 
-	//update enemies
-	for (int i = 0; i < enemies.size(); ++i)
-	{
-		enemies[i]->Update(dt);
-		enemies[i]->Chase(enemies, mPlayer, dt);
-
-		//collision checks between enemies and playerBB		
-		SpriteRectCollision(enemies[i], playerBB);
-
-		//collision checks between enemies and environmentBBs
-		for (int j = 0; j < boxes.size(); ++j)
+		//update player
+		mPlayer->Update(dt);
+		mPlayer->AddForce(XMVectorSet(0.0f, -9.81f, 0.0f, 0.0f));   //adds gravity
+		//update enemy damage done to player
+		for (int i = 0; i < enemies.size(); ++i)
 		{
-			SpriteRectCollision(enemies[i], boxes[j]);
-		}
-
-		//delete enemy upon death
-		if (enemies[i]->GetHealth() == 0)
-		{
-			delete enemies[i];
-			enemies.erase(enemies.begin() + i);
-			i--;
-			break;
-		}
-	}
-
-	//collision between playerBB and environmentBBs
-	for (int i = 0; i < boxes.size(); ++i)
-	{
-		RectRectCollision(playerBB, boxes[i], mPlayer);
-
-		//update mGrounded bool for player jump
-		if (RectRectCollision(playerBB, boxes[i], mPlayer) == CollisionSide::bot)
-		{
-			mPlayer->HitGround();
-		}
-	}
-
-	//update projectiles
-	for (int i = 0; i < mProjectiles.size(); ++i)
-	{
- 		mProjectiles[i]->Update(dt);
-		for (int j = 0; j < enemies.size(); ++j)
-		{
-			if (mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MAX_DISTANCE ||
-				mProjectiles[i]->GetDistanceTravelled() < mProjectiles[i]->MIN_DISTANCE)
+			if (PlayerEnemyCollision(mPlayer, enemies[i]) && recoverTime == 0.0f)
 			{
-				delete mProjectiles[i];
-				mProjectiles.erase(mProjectiles.begin() + i);
-				i--;
-				break;
-			}
-			//collision checks between enemies and projectiles	
-			if (EnemyProjCollision(enemies[j], mProjectiles[i]))
-			{
-				mProjectiles[i]->ApplyDamage(enemies[j]);
-				/*std::wstringstream ss;
-				ss << enemies[j]->GetHealth();
+				enemies[i]->ApplyDamage(mPlayer);
+				std::wstringstream ss;
+				ss << mPlayer->GetHealth();
 				OutputDebugString(ss.str().c_str());
-				OutputDebugString(L"\n");*/
-				delete mProjectiles[i];
-				mProjectiles.erase(mProjectiles.begin() + i);
-				i--;
-				break;
-				
+				OutputDebugString(L"\n");
+				recoverTime = 3.0f;   //player has a 3s vunerability timer
 			}
 		}
+		if (mPlayer->GetHealth() == 0)
+		{
+			//switch to game over state to display game over screen
+		}
+
+		//update enemies
+		for (int i = 0; i < enemies.size(); ++i)
+		{
+			enemies[i]->Update(dt);
+			enemies[i]->Chase(enemies, mPlayer, dt);
+
+			//collision checks between enemies and playerBB		
+			SpriteRectCollision(enemies[i], playerBB);
+
+			//collision checks between enemies and environmentBBs
+			for (int j = 0; j < boxes.size(); ++j)
+			{
+				SpriteRectCollision(enemies[i], boxes[j]);
+			}
+
+			//delete enemy upon death
+			if (enemies[i]->GetHealth() == 0)
+			{
+				delete enemies[i];
+				enemies.erase(enemies.begin() + i);
+				i--;
+				break;
+			}
+		}
+
+		//collision between playerBB and environmentBBs
+		for (int i = 0; i < boxes.size(); ++i)
+		{
+			RectRectCollision(playerBB, boxes[i], mPlayer);
+
+			//update mGrounded bool for player jump
+			if (RectRectCollision(playerBB, boxes[i], mPlayer) == CollisionSide::bot)
+			{
+				mPlayer->HitGround();
+			}
+		}
+
+		//update projectiles
+		for (int i = 0; i < mProjectiles.size(); ++i)
+		{
+			mProjectiles[i]->Update(dt);
+			for (int j = 0; j < enemies.size(); ++j)
+			{
+				if (mProjectiles[i]->GetDistanceTravelled() > mProjectiles[i]->MAX_DISTANCE ||
+					mProjectiles[i]->GetDistanceTravelled() < mProjectiles[i]->MIN_DISTANCE)
+				{
+					delete mProjectiles[i];
+					mProjectiles.erase(mProjectiles.begin() + i);
+					i--;
+					break;
+				}
+				//collision checks between enemies and projectiles	
+				if (EnemyProjCollision(enemies[j], mProjectiles[i]))
+				{
+					mProjectiles[i]->ApplyDamage(enemies[j]);
+					/*std::wstringstream ss;
+					ss << enemies[j]->GetHealth();
+					OutputDebugString(ss.str().c_str());
+					OutputDebugString(L"\n");*//*
+					delete mProjectiles[i];
+					mProjectiles.erase(mProjectiles.begin() + i);
+					i--;
+					break;
+					*/
+				}
+			}
+		}
+
+
+		//update sounds
+		sys->update();
+
+		break;
 	}
-		
-	//update sounds
-	sys->update();
+	
 }
 
 void InClassProj::DrawScene()
 {
-	//state switch.
-	switch (GetState())
-	{
-	case 0:
-		break;
-	case 1:
-		return;
-	}
-
+	
 	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::White));
 	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
@@ -1089,11 +1143,6 @@ void InClassProj::DrawScene()
 	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	md3dImmediateContext->OMSetBlendState(mTransparentBS, blendFactor, 0xffffffff);
 	md3dImmediateContext->OMSetDepthStencilState(mFontDS, 0);
-	
-	
-	
-	
-	//Move this to Game and call it from the switch
 	
 	XMVECTOR ambient = XMLoadFloat4(&mAmbientColour);
 
@@ -1123,55 +1172,78 @@ void InClassProj::DrawScene()
 	view = m2DCam->GetView();
 
 	vp = vp * view * proj;
-
-	mBG->Draw(vp, md3dImmediateContext, mLitTexEffect);
-
-	ID3D11RasterizerState* rs;
-	D3D11_RASTERIZER_DESC rsd;
-	rsd.CullMode = D3D11_CULL_NONE;
-	rsd.AntialiasedLineEnable = false;
-	rsd.DepthBias = 0.0f;
-	rsd.DepthBiasClamp = 0.0f;
-	rsd.DepthClipEnable = true;
-	rsd.FillMode = D3D11_FILL_SOLID;
-	rsd.FrontCounterClockwise = true;
-	rsd.MultisampleEnable = true;
-	rsd.ScissorEnable = false;
-	rsd.SlopeScaledDepthBias = 0.0f;
-	md3dDevice->CreateRasterizerState(&rsd, &rs);
-	md3dImmediateContext->RSSetState(rs);
-
-	//draw player
-	if (isFacingRight)
-	{
-		mPlayer->SetScale(XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f));
-	}
-	else if (!isFacingRight)
-	{
-		mPlayer->SetScale(XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f));
-	}
-	mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
-	md3dImmediateContext->RSSetState(0);
 	
-	//draw enemies
-	for (int i = 0; i < enemies.size(); ++i)
+	switch (GetState())
 	{
-		enemies[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
+	case SPLASH:
+		splash->DrawScene(vp, md3dImmediateContext, mLitTexEffect);
+		break;
+	case CREDITS:
+		break;
+	case MAINMENU:
+		mainmenu->DrawScene(vp, md3dImmediateContext, mLitTexEffect);
+		break;
+	case GAMEOVER:
+		gameOver->DrawScene(vp, md3dImmediateContext, mLitTexEffect);
+		break;
+	case GAMEWON:
+		gameWon->DrawScene(vp, md3dImmediateContext, mLitTexEffect);
+		break;
+	case GAME:
+
+		mBG->Draw(vp, md3dImmediateContext, mLitTexEffect);
+
+		ID3D11RasterizerState* rs;
+		D3D11_RASTERIZER_DESC rsd;
+		rsd.CullMode = D3D11_CULL_NONE;
+		rsd.AntialiasedLineEnable = false;
+		rsd.DepthBias = 0.0f;
+		rsd.DepthBiasClamp = 0.0f;
+		rsd.DepthClipEnable = true;
+		rsd.FillMode = D3D11_FILL_SOLID;
+		rsd.FrontCounterClockwise = true;
+		rsd.MultisampleEnable = true;
+		rsd.ScissorEnable = false;
+		rsd.SlopeScaledDepthBias = 0.0f;
+		md3dDevice->CreateRasterizerState(&rsd, &rs);
+		md3dImmediateContext->RSSetState(rs);
+
+		//draw player
+		if (isFacingRight)
+		{
+			mPlayer->SetScale(XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f));
+		}
+		else if (!isFacingRight)
+		{
+			mPlayer->SetScale(XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f));
+		}
+		mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
+		md3dImmediateContext->RSSetState(0);
+
+		//draw enemies
+		for (int i = 0; i < enemies.size(); ++i)
+		{
+			enemies[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
+		}
+
+		//draw arrow projectiles
+		for (int i = 0; i < mProjectiles.size(); ++i)
+		{
+			mProjectiles[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
+		}
+
+		DrawParticles();
+		md3dImmediateContext->OMSetDepthStencilState(0, 0);
+		md3dImmediateContext->OMSetBlendState(0, blendFactor, 0xffffffff);
+
+		//mFont->DrawFont(md3dImmediateContext, XMVectorSet(10.0f, 500.0f, 0.0f, 0.0f), 50, 75, 10, "Hi Brandon, you are a good student");
+
+		break;
 	}
-
-	//draw arrow projectiles
-	for (int i = 0; i < mProjectiles.size(); ++i)
-	{
-		mProjectiles[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
-	}
-
-	DrawParticles();
-	md3dImmediateContext->OMSetDepthStencilState(0, 0);
-	md3dImmediateContext->OMSetBlendState(0, blendFactor, 0xffffffff);
-
-	//mFont->DrawFont(md3dImmediateContext, XMVectorSet(10.0f, 500.0f, 0.0f, 0.0f), 50, 75, 10, "Hi Brandon, you are a good student");
+	
 	
 	HR(mSwapChain->Present(1, 0));
+	
 }
 
 void InClassProj::OnMouseDown(WPARAM btnState, int x, int y)
@@ -1184,6 +1256,7 @@ void InClassProj::OnMouseDown(WPARAM btnState, int x, int y)
 	}
 	if ((btnState & MK_LBUTTON) != 0)
 	{
+		/*
 		JetpackParticle newParticle;
 		XMStoreFloat3(&newParticle.pos, mPlayer->GetPos() + XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
 		//XMStoreFloat3(&newParticle.vel, mTestPlayer->GetLook() * 0.1f);
@@ -1191,6 +1264,7 @@ void InClassProj::OnMouseDown(WPARAM btnState, int x, int y)
 		newParticle.size.x = 1.0f;
 		newParticle.size.y = 1.0f;
 		mParticles.push_back(newParticle);
+		*/
 	}
 
 	SetCapture(mhMainWnd);	 
@@ -1212,20 +1286,8 @@ void InClassProj::OnMouseMove(WPARAM btnState, int x, int y)
 	mLastMousePos.y = y;
 }
 
-float timerTest = 0.0f;
-bool runTimerTest = false;
 void InClassProj::UpdateKeyboardInput(float dt)
-{
-	if (runTimerTest)
-	{
-		timerTest += dt;
-		if (timerTest >= 3.0f)
-		{
-			timerTest = 0.0f;
-			runTimerTest = false;
-		}
-	}
-		
+{	
 
 	float move = 0.0f;
 	move = dt * 100;
@@ -1296,25 +1358,6 @@ void InClassProj::UpdateKeyboardInput(float dt)
 			result = sys->playSound(sound1, 0, false, &channel);
 		}
 	}
-
-	//for testing states
-	if (GetAsyncKeyState(VK_RSHIFT) & 0x8000)
-	{
-		if (!runTimerTest)
-		{
-			runTimerTest = true;
-			if (mCurrState == 0)
-			{
-				SetState(1);
-				return;
-			}
-
-			else if (mCurrState == 1)
-			{
-				SetState(0);
-			}
-		}
-	}
 }
 
 void InClassProj::DrawParticles()
@@ -1354,6 +1397,7 @@ void InClassProj::DrawParticles()
 
 void InClassProj::SetState(int state)
 {
+	mPrevState = mCurrState;
 	mCurrState = state;
 }
 
