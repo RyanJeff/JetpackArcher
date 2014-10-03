@@ -234,6 +234,8 @@ D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), m2DCam(0), mPlayer(0)
 	game = 0;
 	credits = 0;
 	splash = 0;
+	gameover = 0;
+	gamewon = 0;
 }
 
 InClassProj::~InClassProj()
