@@ -22,7 +22,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 }
 
 JetpackArcher::JetpackArcher(HINSTANCE hInstance) :
-D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), mCurrState(MAIN_MENU), mPrevState(-1)
+D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), mCurrState(GAME_WON), mPrevState(-1)
 {
 	XMVECTOR pos = XMVectorSet(1.0f, 1.0f, 5.0f, 0.0f);
 	XMVECTOR look = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
@@ -233,7 +233,7 @@ void JetpackArcher::UpdateScene(float dt)
 			Destroy();
 			game = new Game();
 			game->Init(md3dDevice);
-			SetState(MAIN_MENU);
+			SetState(GAME);
 		}
 
 		game->UpdateScene(md3dImmediateContext, md3dDevice, dt);
@@ -344,6 +344,16 @@ void JetpackArcher::OnMouseDown(WPARAM btnState, int x, int y)
 	if (credits)
 	{
 		credits->CheckClick(mLastMousePos, this);
+	}
+
+	if (gameOver)
+	{
+		gameOver->CheckClick(mLastMousePos, this);
+	}
+
+	if (gameWon)
+	{
+		gameWon->CheckClick(mLastMousePos, this);
 	}
 }
 
