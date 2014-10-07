@@ -256,25 +256,25 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	ID3D11ShaderResourceView* EOLobjImg;
 	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/EOLobj.png", 0, 0, &EOLobjImg, 0);
 	//EOLobj frame1
-	EOLobjFrame->imageWidth = 192;
-	EOLobjFrame->imageHeight = 64;
+	EOLobjFrame->imageWidth = 96;
+	EOLobjFrame->imageHeight = 32;
 	EOLobjFrame->x = 0;
 	EOLobjFrame->y = 0;
 	EOLobjFrame->image = EOLobjImg;
 	EOLobjFrames.push_back(EOLobjFrame);
 	//EOLobj frame2
 	EOLobjFrame = new Sprite::Frame();
-	EOLobjFrame->imageWidth = 192;
-	EOLobjFrame->imageHeight = 64;
-	EOLobjFrame->x = 64;
+	EOLobjFrame->imageWidth = 96;
+	EOLobjFrame->imageHeight = 32;
+	EOLobjFrame->x = 32;
 	EOLobjFrame->y = 0;
 	EOLobjFrame->image = EOLobjImg;
 	EOLobjFrames.push_back(EOLobjFrame);
 	//EOLobj frame3
 	EOLobjFrame = new Sprite::Frame();
-	EOLobjFrame->imageWidth = 192;
-	EOLobjFrame->imageHeight = 64;
-	EOLobjFrame->x = 128;
+	EOLobjFrame->imageWidth = 96;
+	EOLobjFrame->imageHeight = 32;
+	EOLobjFrame->x = 64;
 	EOLobjFrame->y = 0;
 	EOLobjFrame->image = EOLobjImg;
 	EOLobjFrames.push_back(EOLobjFrame);
@@ -285,7 +285,7 @@ bool Game::Init(ID3D11Device* md3dDevice)
 		1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice, 0.0f);
 	//player
 	mPlayer = new Player(XMVectorSet(512.0f, 384.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32, 32, 0.1f, frames, 0.25f, md3dDevice, 5.0f);
+		32, 32, 0.1f, frames, 0.25f, md3dDevice, 1.0f);
 	//enemy1
 	mEnemy1 = new Enemy(XMVectorSet(800.0f, 500.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		32.0f, 32.0f, 0.1f, enemyFrames1, 0.25f, md3dDevice, 5.0f);
@@ -309,8 +309,8 @@ bool Game::Init(ID3D11Device* md3dDevice)
 		redBarVec.push_back(mRedHBar);
 	}
 	//end of level object
-	EOLobj = new Sprite(XMVectorSet(512.0f, 704.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), //centre on x, 64 down trom top
-		64.0f, 64.0f, 1.0f, EOLobjFrames, 0.25f, md3dDevice, 0.0f);
+	EOLobj = new Sprite(XMVectorSet(512.0f, 720.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), //centre on x, 48 down trom top
+		32.0f, 32.0f, 1.0f, EOLobjFrames, 0.25f, md3dDevice, 0.0f);
 
 	mPlayer->Play(true);
 
@@ -740,7 +740,7 @@ bool Game::PlayerEnemyCollision(Sprite* player, Sprite* enemy)
 	}
 }
 
-void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* md3dDevice, float dt)
+void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* md3dDevice, float dt, JetpackArcher* instance)
 {
 	ID3D11RasterizerState* rs;
 	D3D11_RASTERIZER_DESC rsd;
@@ -792,17 +792,22 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 		if (PlayerEnemyCollision(mPlayer, enemies[i]) && recoverTime == 0.0f)
 		{
 			enemies[i]->ApplyDamage(mPlayer);
+			/*std::wstringstream ss;
+			ss << mPlayer->GetHealth();
+			OutputDebugString(ss.str().c_str());
+			OutputDebugString(L"\n");*/
 			recoverTime = 3.0f;   //player has 3 seconds before damage can be done to him again
 		}
 	}
+	//player dead / game over
 	if (mPlayer->GetHealth() == 0)
 	{
-		//switch to game over state to display game over screen
+		instance->SetState(JetpackArcher::States::GAME_OVER);
 	}
-	//collision between player and end of level object
+	//collision between player and end of level object / game won
 	if (PlayerEnemyCollision(mPlayer, EOLobj))
 	{
-		//switch to either game over or level 2
+		instance->SetState(JetpackArcher::States::GAME_WON);
 	}
 
 	//update enemies
@@ -891,7 +896,7 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 	EOLobj->Update(dt);
 }
 
-void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, IDXGISwapChain* mSwapChain, ID3D11RenderTargetView* mRenderTargetView, 
+void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, IDXGISwapChain* mSwapChain, ID3D11RenderTargetView* mRenderTargetView,
 	ID3D11DepthStencilView* mDepthStencilView, PointLightOptimized mPointLight, SpotLightOptimized mSpotLight, XMFLOAT4 mAmbientColour)
 {
 	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::White));
@@ -908,14 +913,8 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, IDXGISwapChain* 
 	XMMATRIX view = m2DCam->GetView();
 
 	mLitTexEffect->SetPerFrameParams(ambient, eyePos, mPointLight, mSpotLight);
-
-	XMMATRIX vp = view * proj;
-
-	vp = XMMatrixIdentity();
-	proj = XMLoadFloat4x4(&m2DProj);
-	view = m2DCam->GetView();
-
-	vp = vp * view * proj;
+	
+	XMMATRIX tempVP = vp;
 
 	md3dImmediateContext->IASetInputLayout(Vertex::GetNormalTexVertLayout());
 	md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -923,14 +922,6 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, IDXGISwapChain* 
 	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	md3dImmediateContext->OMSetBlendState(mTransparentBS, blendFactor, 0xffffffff);
 	md3dImmediateContext->OMSetDepthStencilState(mFontDS, 0);
-
-	vp = XMMatrixIdentity();
-	proj = XMLoadFloat4x4(&m2DProj);
-	view = m2DCam->GetView();
-
-	vp = vp * view * proj;
-
-
 
 	mBG->Draw(vp, md3dImmediateContext, mLitTexEffect);
 

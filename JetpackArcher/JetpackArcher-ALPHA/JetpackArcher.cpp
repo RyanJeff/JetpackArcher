@@ -22,7 +22,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 }
 
 JetpackArcher::JetpackArcher(HINSTANCE hInstance) :
-D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), mCurrState(GAME_OVER), mPrevState(-1)
+D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), mCurrState(SPLASH)
 {
 	XMVECTOR pos = XMVectorSet(1.0f, 1.0f, 5.0f, 0.0f);
 	XMVECTOR look = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
@@ -55,8 +55,20 @@ JetpackArcher::~JetpackArcher()
 	if(mLitTexEffect)
 		delete mLitTexEffect;
 
+	//if (splash)
+	//	delete splash;
+
 	//if (mainMenu)
-		//delete mainMenu;
+	//	delete mainMenu;
+
+	//if (credits)
+	//	delete credits;
+
+	//if (gameWon)
+	//	delete gameWon;
+
+	//if (gameOver)
+	//	delete gameOver;
 
 }
 
@@ -115,33 +127,23 @@ bool JetpackArcher::Init()
 	BuildBlendStates();
 	BuildDSStates();
 
-	switch (GetState())
-	{
-	case SPLASH:
-		splash = new Splash();
-		splash->Init(md3dDevice, mClientWidth, mClientHeight);
-		break;
-	case MAIN_MENU:
-		mainMenu = new MainMenu();
-		mainMenu->Init(md3dDevice, mClientWidth, mClientHeight);
-		break;
-	case CREDITS:
-		credits = new Credits();
-		credits->Init(md3dDevice, mClientWidth, mClientHeight);
-		break;
-	case GAME:
-		game = new Game();
-		game->Init(md3dDevice);
-		break;
-	case GAME_WON:
-		gameWon = new GameWon();
-		gameWon->Init(md3dDevice, mClientWidth, mClientHeight);
-		break;
-	case GAME_OVER:
-		gameOver = new GameOver();
-		gameOver->Init(md3dDevice, mClientWidth, mClientHeight);
-		break;
-	}
+	splash = new Splash();
+	splash->Init(md3dDevice, mClientWidth, mClientHeight);
+
+	//mainMenu = new MainMenu();
+	//mainMenu->Init(md3dDevice, mClientWidth, mClientHeight);
+
+	//credits = new Credits();
+	//credits->Init(md3dDevice, mClientWidth, mClientHeight);
+
+	//game = new Game();
+	//game->Init(md3dDevice);
+
+	//gameWon = new GameWon();
+	//gameWon->Init(md3dDevice, mClientWidth, mClientHeight);
+
+	//gameOver = new GameOver();
+	//gameOver->Init(md3dDevice, mClientWidth, mClientHeight);
 
 	//result = sys->playSound(sound1, 0, false, &channel);
 
@@ -193,16 +195,14 @@ void JetpackArcher::UpdateScene(float dt)
 			splash->Init(md3dDevice, mClientWidth, mClientHeight);
 			SetState(SPLASH);
 		}
-
 		splashTimer += dt;
-		if (splashTimer >= 3.0f)
+		if (splashTimer >= 2.0f)
 		{
 			mainMenu = new MainMenu();
 			mainMenu->Init(md3dDevice, mClientWidth, mClientHeight);
 			SetState(MAIN_MENU);
 			break;
 		}
-
 		splash->UpdateScene(dt);
 		break;
 	case MAIN_MENU:
@@ -213,7 +213,6 @@ void JetpackArcher::UpdateScene(float dt)
 			mainMenu->Init(md3dDevice, mClientWidth, mClientHeight);
 			SetState(MAIN_MENU);
 		}
-
 		mainMenu->UpdateScene(dt);
 		break;
 	case CREDITS:
@@ -224,7 +223,6 @@ void JetpackArcher::UpdateScene(float dt)
 			credits->Init(md3dDevice, mClientWidth, mClientHeight);
 			SetState(CREDITS);
 		}
-
 		credits->UpdateScene(dt);
 		break;
 	case GAME:
@@ -235,8 +233,7 @@ void JetpackArcher::UpdateScene(float dt)
 			game->Init(md3dDevice);
 			SetState(GAME);
 		}
-
-		game->UpdateScene(md3dImmediateContext, md3dDevice, dt);
+		game->UpdateScene(md3dImmediateContext, md3dDevice, dt, this);
 		break;
 	case GAME_WON:
 		if (!gameWon)
@@ -246,7 +243,6 @@ void JetpackArcher::UpdateScene(float dt)
 			gameWon->Init(md3dDevice, mClientWidth, mClientHeight);
 			SetState(GAME_WON);
 		}
-
 		gameWon->UpdateScene(dt);
 		break;
 	case GAME_OVER:
@@ -316,7 +312,7 @@ void JetpackArcher::DrawScene()
 		mainMenu->DrawScene(vp, md3dImmediateContext, mLitTexEffect);
 		break;
 	case GAME:
-		game->DrawScene(md3dImmediateContext, mSwapChain, mRenderTargetView, mDepthStencilView, mPointLight, mSpotLight, mAmbientColour);
+		game->DrawScene(md3dImmediateContext, vp, mSwapChain, mRenderTargetView, mDepthStencilView, mPointLight, mSpotLight, mAmbientColour);
 		break;
 	case GAME_OVER:
 		gameOver->DrawScene(vp, md3dImmediateContext, mLitTexEffect);
@@ -340,13 +336,11 @@ void JetpackArcher::OnMouseDown(WPARAM btnState, int x, int y)
 	{
 		mainMenu->CheckClick(mLastMousePos, this);
 	}
-
-	if (credits)
+	else if (credits)
 	{
 		credits->CheckClick(mLastMousePos, this);
 	}
-
-	if (gameOver)
+	else if (gameOver)
 	{
 		gameOver->CheckClick(mLastMousePos, this);
 	}
@@ -450,14 +444,24 @@ void JetpackArcher::BuildDSStates()
 	HR(md3dDevice->CreateDepthStencilState(&dsDesc, &mFontDS));
 }
 
-void JetpackArcher::SetState(int state)
+void JetpackArcher::SetState(States state)
 {
-	mPrevState = mCurrState;
 	mCurrState = state;
 }
 
-int JetpackArcher::GetState()
+JetpackArcher::States JetpackArcher::GetState()
 {
+	if (mCurrState == GAME_OVER)
+	{
+		gameOver = new GameOver();
+		gameOver->Init(md3dDevice, mClientWidth, mClientHeight);
+	}
+	else if (mCurrState == GAME_WON)
+	{
+		gameWon = new GameWon();
+		gameWon->Init(md3dDevice, mClientWidth, mClientHeight);
+	}
+
 	return mCurrState;
 }
 
@@ -473,29 +477,24 @@ void JetpackArcher::Destroy()
 		delete game;
 		game = 0;
 	}
-		
 	if (credits)
 	{
 		delete credits;
 		credits = 0;
 	}
-		
 	if (gameOver)
 	{
 		delete gameOver;
 		gameOver = 0;
 	}
-		
 	if (gameWon)
 	{
 		delete gameWon;
 		gameWon = 0;
 	}
-		
 	if (splash)
 	{
 		delete splash;
 		splash = 0;
 	}
-		
 }

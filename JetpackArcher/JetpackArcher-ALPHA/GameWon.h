@@ -1,7 +1,7 @@
 #pragma once
-
 #include "Sprite.h"
 
+class JetpackArcher;
 class GameWon
 {
 public:

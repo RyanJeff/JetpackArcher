@@ -16,8 +16,8 @@
 #include "Sprite.h"
 #include "xnacollision.h"
 #include "fmod.hpp"
-#include "BoundingBoxes.h"
 
+class JetpackArcher;
 struct JetpackParticle
 {
 	XMFLOAT3 pos;
@@ -43,8 +43,8 @@ public:
 
 	bool Init(ID3D11Device* md3dDevice);
 	virtual void InitBoundingBoxes();
-	virtual void UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* md3dDevice, float dt);
-	virtual void DrawScene(ID3D11DeviceContext* md3dImmediateContext, IDXGISwapChain* mSwapChain, ID3D11RenderTargetView* mRenderTargetView,
+	virtual void UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* md3dDevice, float dt, JetpackArcher* instance);
+	virtual void DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, IDXGISwapChain* mSwapChain, ID3D11RenderTargetView* mRenderTargetView,
 		ID3D11DepthStencilView* mDepthStencilView, PointLightOptimized mPointLight, SpotLightOptimized mSpotLight, XMFLOAT4 mAmbientColour);
 
 	virtual void OnMouseDown(HWND mhMainWnd, WPARAM btnState, int x, int y);
@@ -72,8 +72,6 @@ private:
 	bool EnemyProjCollision(Sprite* sprite, Projectile* arrow);
 	bool PlayerEnemyCollision(Sprite* player, Sprite* enemy);
 
-
-
 	void DrawParticles(ID3D11DeviceContext* md3dImmediateContext);
 
 	LitTexEffect* mLitTexEffect;
@@ -83,20 +81,19 @@ private:
 
 	FontRasterizer* mFont;
 
-
 	XMFLOAT4X4 mView;
 	XMFLOAT4X4 mProj;
 	XMFLOAT4X4 m2DProj;
 
-
-
 	Sprite* mBG;
+
 	Sprite* mGreenHBar;
 	std::vector<Sprite*> greenBarVec;
 	Sprite* mRedHBar;
 	std::vector<Sprite*> redBarVec;
 
 	Player* mPlayer;
+
 	Enemy* mEnemy1;
 	Enemy* mEnemy2;
 	Enemy* mEnemy3;
@@ -144,13 +141,7 @@ private:
 
 	std::vector<JetpackParticle> mParticles;
 
-
 	ID3D11ShaderResourceView* mParticleTexture;
-
-
-
-
-
 
 	bool mMouseReleased;
 	POINT mLastMousePos;

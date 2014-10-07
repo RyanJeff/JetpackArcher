@@ -14,7 +14,6 @@ Controls - LEFT ARROW to move left
 #include <stdlib.h>
 #include <time.h>
 #include <vector>
-#include "Game.h"
 #include "Vertex.h"
 #include "GraphicalObject.h"
 #include "Player.h"
@@ -25,14 +24,17 @@ Controls - LEFT ARROW to move left
 #include "Sprite.h"
 #include "xnacollision.h"
 #include "fmod.hpp"
-#include "MainMenu.h"
-#include "Credits.h"
-#include "Splash.h"
-#include "GameOver.h"
-#include "GameWon.h"
+#include "BoundingBoxes.h"
 
+class MainMenu;
+class Splash;
+class Credits;
+class Game;
+class GameOver;
+class GameWon;
 class JetpackArcher : public D3DApp
 {
+public:
 	enum States
 	{
 		SPLASH,
@@ -43,7 +45,6 @@ class JetpackArcher : public D3DApp
 		GAME_OVER
 	};
 
-public:
 	JetpackArcher(HINSTANCE hInstance);
 	~JetpackArcher();
 
@@ -89,10 +90,11 @@ private:
 	GameWon* gameWon;
 
 public:
-	int GetState();
-	void SetState(int state);
-	int mCurrState;
-	int mPrevState;
+	States GetState();
+	void SetState(States state);
+	States mCurrState;
 
 	float splashTimer = 0.0f;
+
+	void Destroy();
 };
