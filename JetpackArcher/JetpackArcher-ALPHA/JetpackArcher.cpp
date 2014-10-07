@@ -22,7 +22,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 }
 
 JetpackArcher::JetpackArcher(HINSTANCE hInstance) :
-D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), mCurrState(SPLASH), mPrevState(-1)
+D3DApp(hInstance), mLitTexEffect(0), mMouseReleased(true), mCurrState(GAME_OVER), mPrevState(-1)
 {
 	XMVECTOR pos = XMVectorSet(1.0f, 1.0f, 5.0f, 0.0f);
 	XMVECTOR look = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
@@ -186,6 +186,13 @@ void JetpackArcher::UpdateScene(float dt)
 	switch (GetState())
 	{
 	case SPLASH:
+		if (!splash)
+		{
+			Destroy();
+			splash = new Splash();
+			splash->Init(md3dDevice, mClientWidth, mClientHeight);
+			SetState(SPLASH);
+		}
 
 		splashTimer += dt;
 		if (splashTimer >= 3.0f)
@@ -195,21 +202,61 @@ void JetpackArcher::UpdateScene(float dt)
 			SetState(MAIN_MENU);
 			break;
 		}
+
 		splash->UpdateScene(dt);
 		break;
 	case MAIN_MENU:
+		if (!mainMenu)
+		{
+			Destroy();
+			mainMenu = new MainMenu();
+			mainMenu->Init(md3dDevice, mClientWidth, mClientHeight);
+			SetState(MAIN_MENU);
+		}
+
 		mainMenu->UpdateScene(dt);
 		break;
 	case CREDITS:
+		if (!credits)
+		{
+			Destroy();
+			credits = new Credits();
+			credits->Init(md3dDevice, mClientWidth, mClientHeight);
+			SetState(CREDITS);
+		}
+
 		credits->UpdateScene(dt);
 		break;
 	case GAME:
+		if (!game)
+		{
+			Destroy();
+			game = new Game();
+			game->Init(md3dDevice);
+			SetState(GAME);
+		}
+
 		game->UpdateScene(md3dImmediateContext, md3dDevice, dt);
 		break;
 	case GAME_WON:
+		if (!gameWon)
+		{
+			Destroy();
+			gameWon = new GameWon();
+			gameWon->Init(md3dDevice, mClientWidth, mClientHeight);
+			SetState(GAME_WON);
+		}
+
 		gameWon->UpdateScene(dt);
 		break;
 	case GAME_OVER:
+		if (!gameOver)
+		{
+			Destroy();
+			gameOver = new GameOver();
+			gameOver->Init(md3dDevice, mClientWidth, mClientHeight);
+			SetState(GAME_OVER);
+		}
 		gameOver->UpdateScene(dt);
 		break;
 	}
@@ -288,6 +335,21 @@ void JetpackArcher::OnMouseDown(WPARAM btnState, int x, int y)
 	mLastMousePos.y = y;
 
 	SetCapture(mhMainWnd);
+
+	if (mainMenu)
+	{
+		mainMenu->CheckClick(mLastMousePos, this);
+	}
+
+	if (credits)
+	{
+		credits->CheckClick(mLastMousePos, this);
+	}
+
+	if (gameOver)
+	{
+		gameOver->CheckClick(mLastMousePos, this);
+	}
 }
 
 void JetpackArcher::OnMouseUp(WPARAM btnState, int x, int y)
@@ -397,4 +459,43 @@ void JetpackArcher::SetState(int state)
 int JetpackArcher::GetState()
 {
 	return mCurrState;
+}
+
+void JetpackArcher::Destroy()
+{
+	if (mainMenu)
+	{
+		delete mainMenu;
+		mainMenu = 0;
+	}
+	if (game)
+	{
+		delete game;
+		game = 0;
+	}
+		
+	if (credits)
+	{
+		delete credits;
+		credits = 0;
+	}
+		
+	if (gameOver)
+	{
+		delete gameOver;
+		gameOver = 0;
+	}
+		
+	if (gameWon)
+	{
+		delete gameWon;
+		gameWon = 0;
+	}
+		
+	if (splash)
+	{
+		delete splash;
+		splash = 0;
+	}
+		
 }
