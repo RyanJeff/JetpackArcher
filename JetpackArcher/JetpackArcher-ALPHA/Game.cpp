@@ -1,7 +1,7 @@
 #include "Game.h"
 #include "JetpackArcher.h"
 
-Game::Game() : mLitTexEffect(0), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0),
+Game::Game() : mLitTexEffect(0), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0), mEnemy4(0), mEnemy5(0), mEnemy6(0),
 	mGreenHBar(0), mRedHBar(0), EOLobj(0)
 {
 	XMVECTOR pos = XMVectorSet(1.0f, 1.0f, 5.0f, 0.0f);
@@ -230,6 +230,93 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	enemyFrame3->image = enemyImage3;
 	enemyFrames3.push_back(enemyFrame3);
 
+	//Enemy4 spritesheet image
+	Sprite::Frame* enemyFrame4 = new Sprite::Frame();
+	ID3D11ShaderResourceView* enemyImage4;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemy4.png", 0, 0, &enemyImage4, 0);
+	//Enemy4 frame1
+	enemyFrame4->imageWidth = 96;
+	enemyFrame4->imageHeight = 32;
+	enemyFrame4->x = 0;
+	enemyFrame4->y = 0;
+	enemyFrame4->image = enemyImage4;
+	std::vector<Sprite::Frame*> enemyFrames4;
+	enemyFrames4.push_back(enemyFrame4);
+	//Enemy4 frame2
+	enemyFrame4 = new Sprite::Frame();
+	enemyFrame4->imageWidth = 96;
+	enemyFrame4->imageHeight = 32;
+	enemyFrame4->x = 32;
+	enemyFrame4->y = 0;
+	enemyFrame4->image = enemyImage4;
+	enemyFrames4.push_back(enemyFrame4);
+	//Enemy4 frame3
+	enemyFrame4 = new Sprite::Frame();
+	enemyFrame4->imageWidth = 96;
+	enemyFrame4->imageHeight = 32;
+	enemyFrame4->x = 64;
+	enemyFrame4->y = 0;
+	enemyFrame4->image = enemyImage4;
+	enemyFrames4.push_back(enemyFrame4);
+
+	//Enemy5 spritesheet image
+	Sprite::Frame* enemyFrame5 = new Sprite::Frame();
+	ID3D11ShaderResourceView* enemyImage5;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemy5.png", 0, 0, &enemyImage5, 0);
+	//Enemy5 frame1
+	enemyFrame5->imageWidth = 96;
+	enemyFrame5->imageHeight = 32;
+	enemyFrame5->x = 0;
+	enemyFrame5->y = 0;
+	enemyFrame5->image = enemyImage5;
+	std::vector<Sprite::Frame*> enemyFrames5;
+	enemyFrames5.push_back(enemyFrame5);
+	//Enemy5 frame2
+	enemyFrame5 = new Sprite::Frame();
+	enemyFrame5->imageWidth = 96;
+	enemyFrame5->imageHeight = 32;
+	enemyFrame5->x = 32;
+	enemyFrame5->y = 0;
+	enemyFrame5->image = enemyImage5;
+	enemyFrames5.push_back(enemyFrame5);
+	//Enemy5 frame3
+	enemyFrame5 = new Sprite::Frame();
+	enemyFrame5->imageWidth = 96;
+	enemyFrame5->imageHeight = 32;
+	enemyFrame5->x = 64;
+	enemyFrame5->y = 0;
+	enemyFrame5->image = enemyImage5;
+	enemyFrames5.push_back(enemyFrame5);
+
+	//Enemy6 spritesheet image
+	Sprite::Frame* enemyFrame6 = new Sprite::Frame();
+	ID3D11ShaderResourceView* enemyImage6;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/enemy6.png", 0, 0, &enemyImage6, 0);
+	//Enemy6 frame1
+	enemyFrame6->imageWidth = 96;
+	enemyFrame6->imageHeight = 32;
+	enemyFrame6->x = 0;
+	enemyFrame6->y = 0;
+	enemyFrame6->image = enemyImage6;
+	std::vector<Sprite::Frame*> enemyFrames6;
+	enemyFrames6.push_back(enemyFrame6);
+	//Enemy6 frame2
+	enemyFrame6 = new Sprite::Frame();
+	enemyFrame6->imageWidth = 96;
+	enemyFrame6->imageHeight = 32;
+	enemyFrame6->x = 32;
+	enemyFrame6->y = 0;
+	enemyFrame6->image = enemyImage6;
+	enemyFrames6.push_back(enemyFrame6);
+	//Enemy6 frame3
+	enemyFrame6 = new Sprite::Frame();
+	enemyFrame6->imageWidth = 96;
+	enemyFrame6->imageHeight = 32;
+	enemyFrame6->x = 64;
+	enemyFrame6->y = 0;
+	enemyFrame6->image = enemyImage6;
+	enemyFrames6.push_back(enemyFrame6);
+
 	//enemy green health bar image
 	Sprite::Frame* greenHBFrame = new Sprite::Frame();
 	ID3D11ShaderResourceView* greenHBimage;
@@ -298,6 +385,18 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	mEnemy3 = new Enemy(XMVectorSet(800, 200.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		32.0f, 32.0f, 0.1f, enemyFrames3, 0.25f, md3dDevice, 5.0f);
 	enemies.push_back(mEnemy3);
+	//enemy4
+	mEnemy4 = new Enemy(XMVectorSet(200.0f, 500.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		32.0f, 32.0f, 0.1f, enemyFrames4, 0.25f, md3dDevice, 5.0f);
+	enemies.push_back(mEnemy4);
+	//enemy5
+	mEnemy5 = new Enemy(XMVectorSet(200.0f, 700.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		32.0f, 32.0f, 0.1f, enemyFrames5, 0.25f, md3dDevice, 5.0f);
+	enemies.push_back(mEnemy5);
+	//enemy6
+	mEnemy6 = new Enemy(XMVectorSet(200.0f, 200.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		32.0f, 32.0f, 0.1f, enemyFrames6, 0.25f, md3dDevice, 5.0f);
+	enemies.push_back(mEnemy6);
 	//enemy health bars
 	for (int i = 0; i < enemies.size(); ++i)
 	{

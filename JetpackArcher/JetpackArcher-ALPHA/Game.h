@@ -97,6 +97,9 @@ private:
 	Enemy* mEnemy1;
 	Enemy* mEnemy2;
 	Enemy* mEnemy3;
+	Enemy* mEnemy4;
+	Enemy* mEnemy5;
+	Enemy* mEnemy6;
 	std::vector<Enemy*> enemies;
 
 	BoundingBoxes::BoundingBox playerBB;
