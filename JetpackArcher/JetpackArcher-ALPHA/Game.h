@@ -79,7 +79,9 @@ private:
 
 	BaseCamera* m2DCam;
 
-	FontRasterizer* mFont;
+	FontRasterizer* mHealthFont;
+	FontRasterizer* mFuelFont;
+	FontRasterizer* mControlsFont;
 
 	XMFLOAT4X4 mView;
 	XMFLOAT4X4 mProj;
@@ -89,8 +91,13 @@ private:
 
 	Sprite* mGreenHBar;
 	std::vector<Sprite*> greenBarVec;
+	Sprite* mGreenHBarP;
 	Sprite* mRedHBar;
 	std::vector<Sprite*> redBarVec;
+	Sprite* mRedHBarP;
+
+	Sprite* mGreenFuel;
+	Sprite* mRedFuel;
 
 	Player* mPlayer;
 
@@ -138,6 +145,7 @@ private:
 	std::vector<BoundingBoxes::BoundingBox> boxes;
 
 	Sprite* EOLobj;   //end of level object
+	BoundingBoxes::BoundingBox EOLobjBB;
 
 	std::vector<Projectile*> mProjectiles;
 	Sprite::Frame* projectileFrame = new Sprite::Frame();
@@ -152,6 +160,8 @@ private:
 public:
 	std::vector<Sprite::Frame*> hbFrameG;
 	std::vector<Sprite::Frame*> hbFrameR;
+	std::vector<Sprite::Frame*> fbFrameG;
+	std::vector<Sprite::Frame*> fbFrameR;
 	std::vector<Sprite::Frame*> projFrame;
 	std::vector<Sprite::Frame*> EOLobjFrames;
 
@@ -159,12 +169,28 @@ public:
 	bool canShoot = true;
 	bool isFacingRight = true;
 	float recoverTime = 0.0f;
+	float fuelRecoverTime = 0.0f;
 
 	float currHealth;
 	float maxHealth;
 	float ratio;
 	float redXPos;
 	float redXScale;
+
+	float currHealthP;
+	float maxHealthP;
+	float ratioP;
+	float redXPosP;
+	float redXScaleP;
+
+	float currHealthF;
+	float maxHealthF;
+	float ratioF;
+	float redXPosF;
+	float redXScaleF;
+
+	int mFuel = 5.0f;
+	bool canUseJetpack = true;
 
 	bool EOLobjActive = false;
 };

@@ -65,7 +65,7 @@ void FontRasterizer::InitIB(ID3D11Device* device)
 	HR(device->CreateBuffer(&ibd, &iinitData, &IB));
 }
 
-void FontRasterizer::DrawFont(ID3D11DeviceContext* context, FXMVECTOR pos, float fontWidth, float fontHeight, int charsPerLine, std::string text)
+void FontRasterizer::DrawFont(ID3D11DeviceContext* context, FXMVECTOR pos, float fontWidth, float fontHeight, int charsPerLine, std::string text/*, CXMMATRIX p*/)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedData;
 	HR(context->Map(VB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData));

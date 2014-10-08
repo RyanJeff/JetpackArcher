@@ -1,8 +1,9 @@
 #include "Game.h"
 #include "JetpackArcher.h"
 
-Game::Game() : mLitTexEffect(0), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0), mEnemy4(0), mEnemy5(0), mEnemy6(0),
-	mGreenHBar(0), mRedHBar(0), EOLobj(0)
+Game::Game() : mLitTexEffect(0), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0),
+	mEnemy4(0), mEnemy5(0), mEnemy6(0), mGreenHBar(0), mRedHBar(0), mGreenHBarP(0), mRedHBarP(0), 
+	mRedFuel(0), mGreenFuel(0), EOLobj(0)
 {
 	XMVECTOR pos = XMVectorSet(1.0f, 1.0f, 5.0f, 0.0f);
 	XMVECTOR look = XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
@@ -34,6 +35,10 @@ Game::~Game()
 	{
 		if (enemies[i])
 			delete enemies[i];
+		if (redBarVec[i])
+			delete redBarVec[i];
+		if (greenBarVec[i])
+			delete greenBarVec[i];
 	}
 
 	if (mGreenHBar)
@@ -41,6 +46,21 @@ Game::~Game()
 
 	if (mRedHBar)
 		delete mRedHBar;
+
+	if (mGreenHBarP)
+		delete mGreenHBarP;
+
+	if (mRedHBarP)
+		delete mRedHBarP;
+
+	if (mGreenFuel)
+		delete mGreenFuel;
+
+	if (mRedFuel)
+		delete mRedFuel;
+
+	if (EOLobj)
+		delete EOLobj;
 
 	if (mBG)
 		delete mBG;
@@ -87,8 +107,10 @@ bool Game::Init(ID3D11Device* md3dDevice)
 
 	//font
 	ID3D11ShaderResourceView* font;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/font.png", 0, 0, &font, 0);
-	mFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/fontW.png", 0, 0, &font, 0);
+	mHealthFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
+	mFuelFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
+	mControlsFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
 
 	//projectile image
 	ID3D11ShaderResourceView* projImage;
@@ -338,6 +360,27 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	redHBFrame->image = redHBimage;
 	hbFrameR.push_back(redHBFrame);
 
+	//green fuel bar image
+	Sprite::Frame* greenFBFrame = new Sprite::Frame();
+	ID3D11ShaderResourceView* greenFBimage;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/greenFuel.png", 0, 0, &greenFBimage, 0);
+	greenFBFrame->imageWidth = 96;
+	greenFBFrame->imageHeight = 16;
+	greenFBFrame->x = 0;
+	greenFBFrame->y = 0;
+	greenFBFrame->image = greenFBimage;
+	fbFrameG.push_back(greenFBFrame);
+	//red fuel bar image
+	Sprite::Frame* redFBFrame = new Sprite::Frame();
+	ID3D11ShaderResourceView* redFBimage;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/redFuel.png", 0, 0, &redFBimage, 0);
+	redFBFrame->imageWidth = 96;
+	redFBFrame->imageHeight = 16;
+	redFBFrame->x = 0;
+	redFBFrame->y = 0;
+	redFBFrame->image = redFBimage;
+	fbFrameR.push_back(redFBFrame);
+
 	//end of level object image
 	Sprite::Frame* EOLobjFrame = new Sprite::Frame();
 	ID3D11ShaderResourceView* EOLobjImg;
@@ -372,7 +415,7 @@ bool Game::Init(ID3D11Device* md3dDevice)
 		1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice, 0.0f);
 	//player
 	mPlayer = new Player(XMVectorSet(512.0f, 384.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
-		32, 32, 0.1f, frames, 0.25f, md3dDevice, 1.0f);
+		32, 32, 0.1f, frames, 0.25f, md3dDevice, 3.0f);
 	//enemy1
 	mEnemy1 = new Enemy(XMVectorSet(800.0f, 500.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		32.0f, 32.0f, 0.1f, enemyFrames1, 0.25f, md3dDevice, 5.0f);
@@ -397,16 +440,29 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	mEnemy6 = new Enemy(XMVectorSet(200.0f, 200.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		32.0f, 32.0f, 0.1f, enemyFrames6, 0.25f, md3dDevice, 5.0f);
 	enemies.push_back(mEnemy6);
+
 	//enemy health bars
 	for (int i = 0; i < enemies.size(); ++i)
 	{
 		mGreenHBar = new Sprite(XMVectorSet(enemies[i]->GetPos().m128_f32[0], enemies[i]->GetPos().m128_f32[1] + 32, 0.0f, 0.0f),
 			XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 32.0f, 8.0f, 1.0f, hbFrameG, 0.25f, md3dDevice, 0.0f);
 		greenBarVec.push_back(mGreenHBar);
-		mRedHBar = new Sprite(XMVectorSet(redXPos, enemies[i]->GetPos().m128_f32[1] + 32, 0.0f, 0.0f),
-			XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 32.0f, 8.0f, 1.0f, hbFrameR, 0.25f, md3dDevice, 0.0f);
+		mRedHBar = new Sprite(XMVectorSet(redXPos, enemies[i]->GetPos().m128_f32[1] + 32, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+			 32.0f, 8.0f, 1.0f, hbFrameR, 0.25f, md3dDevice, 0.0f);
 		redBarVec.push_back(mRedHBar);
 	}
+	//player health bar
+	mGreenHBarP = new Sprite(XMVectorSet(60.0f, 736.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
+		96.0f, 16.0f, 1.0f, hbFrameG, 0.25f, md3dDevice, 0.0f);
+	mRedHBarP = new Sprite(XMVectorSet(redXPosP, 736.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
+		96.0f, 16.0f, 1.0f, hbFrameR, 0.25f, md3dDevice, 0.0f);
+
+	//fuel bar
+	mGreenFuel = new Sprite(XMVectorSet(60.0f, 698.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		96.0f, 16.0f, 1.0f, fbFrameG, 0.25f, md3dDevice, 0.0f);
+	mRedFuel = new Sprite(XMVectorSet(redXPosF, 698.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		96.0f, 16.0f, 1.0f, fbFrameR, 0.25f, md3dDevice, 0.0f);
+
 	//end of level object
 	EOLobj = new Sprite(XMVectorSet(512.0f, 720.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), //centre on x, 48 down trom top
 		32.0f, 32.0f, 1.0f, EOLobjFrames, 0.25f, md3dDevice, 0.0f);
@@ -898,13 +954,25 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 			recoverTime = 3.0f;   //player has 3 seconds before damage can be done to him again
 		}
 	}
+	//set player health bar
+	redXPosP = 60.0f;
+	currHealthP = mPlayer->GetHealth();
+	maxHealthP = 3.0f;
+	ratioP = 1.0f - (currHealthP / maxHealthP);
+	redXPosP += ((1.0f - ratioP) / 2.0f) * 96.0f; //96 is barSize
+	redXScaleP = ratioP;
+	mGreenHBarP->SetPos(XMVectorSet(60.0f, 736.0f, 0.0f, 0.0f));
+	mRedHBarP->SetPos(XMVectorSet(redXPosP, 736.0f, 0.0f, 0.0f));
+	mRedHBarP->SetScale(XMVectorSet(redXScaleP, 1.0f, 0.0f, 0.0f));
 	//player dead / game over
 	if (mPlayer->GetHealth() == 0)
 	{
 		instance->SetState(JetpackArcher::States::GAME_OVER);
 	}
 	//collision between player and end of level object / game won
-	if (PlayerEnemyCollision(mPlayer, EOLobj))
+	if (RectRectCollision(playerBB, EOLobjBB, mPlayer) == CollisionSide::top || 
+		RectRectCollision(playerBB, EOLobjBB, mPlayer) == CollisionSide::left || 
+		RectRectCollision(playerBB, EOLobjBB, mPlayer) == CollisionSide::right)
 	{
 		instance->SetState(JetpackArcher::States::GAME_WON);
 	}
@@ -920,8 +988,8 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 		currHealth = enemies[i]->GetHealth();
 		maxHealth = 5.0f;
 		ratio = 1.0f - (currHealth / maxHealth);
-		redXPos += ((1.0f - ratio) / 2.0f) * 32.0f;
-		redXScale = ratio/* * 32.0f*/;
+		redXPos += ((1.0f - ratio) / 2.0f) * 32.0f; //32 is barSize
+		redXScale = ratio;
 		greenBarVec[i]->SetPos(XMVectorSet(enemies[i]->GetPos().m128_f32[0], enemies[i]->GetPos().m128_f32[1] + 32, 0.0f, 0.0f));
 		redBarVec[i]->SetPos(XMVectorSet(redXPos, enemies[i]->GetPos().m128_f32[1] + 32, 0.0f, 0.0f));
 		redBarVec[i]->SetScale(XMVectorSet(redXScale, 1.0f, 0.0f, 0.0f));
@@ -948,6 +1016,9 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 	if (enemies.size() == 0)
 	{
 		EOLobjActive = true;
+		EOLobjBB.pos = XMFLOAT2(EOLobj->GetPos().m128_f32[0], EOLobj->GetPos().m128_f32[1]);
+		EOLobjBB.height = 32.0f;
+		EOLobjBB.width = 32.0f;
 	}
 
 	//collision between playerBB and environmentBBs
@@ -992,6 +1063,9 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 		}
 	}
 
+	mGreenFuel->Update(dt);
+	mRedFuel->Update(dt);
+
 	EOLobj->Update(dt);
 }
 
@@ -1024,6 +1098,7 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 
 	mBG->Draw(vp, md3dImmediateContext, mLitTexEffect);
 
+
 	//draw end of level object
 	if (EOLobjActive)
 	{
@@ -1042,6 +1117,14 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 	mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
 	md3dImmediateContext->RSSetState(0);
 
+	//draw player health bar
+	mGreenHBarP->Draw(vp, md3dImmediateContext, mLitTexEffect);
+	mRedHBarP->Draw(vp, md3dImmediateContext, mLitTexEffect);
+
+	//draw fuel bar 
+	mGreenFuel->Draw(vp, md3dImmediateContext, mLitTexEffect);
+	mRedFuel->Draw(vp, md3dImmediateContext, mLitTexEffect);
+
 	//draw enemies
 	for (int i = 0; i < enemies.size(); ++i)
 	{
@@ -1059,10 +1142,18 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 	}
 
 	DrawParticles(md3dImmediateContext);
+
+	//draw HUD font
+	mHealthFont->DrawFont(md3dImmediateContext, XMVectorSet(60.0f, 732.0f, 0.0f, 0.0f), 96, 20, 10, "Health"/*, vp*/);
+	mFuelFont->DrawFont(md3dImmediateContext, XMVectorSet(60.0f, 704.0f, 0.0f, 0.0f), 96, 20, 10, "Jetpack Fuel"/*, vp*/);
+	//make a timer for this font
+	mControlsFont->DrawFont(md3dImmediateContext, XMVectorSet(600.0f, 100.0f, 0.0f, 0.0f), 50, 50, 21,
+		"Controls: UP to Jump, SPACE to Fire Arrow, Hold CTRL for Jetpack"/*, vp*/);
+
 	md3dImmediateContext->OMSetDepthStencilState(0, 0);
 	md3dImmediateContext->OMSetBlendState(0, blendFactor, 0xffffffff);
 
-	//mFont->DrawFont(md3dImmediateContext, XMVectorSet(10.0f, 500.0f, 0.0f, 0.0f), 50, 75, 10, "Hi Brandon, you are a good student");
+	
 }
 
 void Game::OnMouseDown(HWND mhMainWnd, WPARAM btnState, int x, int y)
@@ -1123,16 +1214,46 @@ void Game::UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt)
 	}
 	if (GetAsyncKeyState(VK_UP) & 0x8000)
 	{
-		if (!GetAsyncKeyState(VK_LSHIFT))
+		//can't jump while jetpack in use
+		if (!GetAsyncKeyState(VK_LCONTROL) || !GetAsyncKeyState(VK_RCONTROL))
 		{
 			//jump
 			mPlayer->Jump();
 		}
 	}
-	if (GetAsyncKeyState(VK_LSHIFT) & 0x8000)
+	if (GetAsyncKeyState(VK_LCONTROL) & 0x8000 || GetAsyncKeyState(VK_RCONTROL) & 0x8000)
 	{
-		//jetpack
-		mPlayer->UseJetpack(dt);
+		//activate jetpack
+		fuelRecoverTime += dt;
+		if (canUseJetpack)
+		{
+			if (fuelRecoverTime > 3.0f)
+			{
+				mFuel--;
+				fuelRecoverTime = 0.0f;
+			}
+			//set fuel health bar
+			redXPosF = 60.0f;
+			currHealthF = mFuel;
+			maxHealthF = 5.0f;
+			ratioF = 1.0f - (currHealthF / maxHealthF);
+			redXPosF += ((1.0f - ratioF) / 2.0f) * 96.0f; //96 is barSize
+			redXScaleF = ratioF;
+			mGreenFuel->SetPos(XMVectorSet(60.0f, 698.0f, 0.0f, 0.0f));
+			mRedFuel->SetPos(XMVectorSet(redXPosF, 698.0f, 0.0f, 0.0f));
+			mRedFuel->SetScale(XMVectorSet(redXScaleF, 1.0f, 0.0f, 0.0f));
+
+			std::wstringstream ss;
+			ss << mFuel;
+			OutputDebugString(ss.str().c_str());
+			OutputDebugString(L"\n");
+
+			mPlayer->UseJetpack(dt);
+		}
+		if (mFuel == 0)
+		{
+			canUseJetpack = false;
+		}
 	}
 	if (GetAsyncKeyState(VK_SPACE) & 0x8000)
 	{

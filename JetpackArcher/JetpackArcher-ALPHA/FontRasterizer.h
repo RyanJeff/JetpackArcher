@@ -26,5 +26,5 @@ public:
 	FontRasterizer(BaseCamera* cam, CXMMATRIX proj, LitTexEffect* effect, int numRows, int numCols, ID3D11ShaderResourceView* texture, ID3D11Device* device);
 	~FontRasterizer();
 
-	void DrawFont(ID3D11DeviceContext* context, FXMVECTOR pos, float fontWidth, float fontHeight, int charsPerLine, std::string text);
+	void DrawFont(ID3D11DeviceContext* context, FXMVECTOR pos, float fontWidth, float fontHeight, int charsPerLine, std::string text/*, CXMMATRIX p*/);
 };

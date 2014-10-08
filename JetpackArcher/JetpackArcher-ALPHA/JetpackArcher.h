@@ -4,7 +4,7 @@ Controls - LEFT ARROW to move left
 		 - RIGHT ARROW to move right
 		 - UP ARROW to jump
 		 - SPACE to shoot arrows
-		 - LEFT SHIFT to use jetpack
+		 - Hold CTRL to use jetpack
 ###############################################################################################*/
 
 #include "d3dApp.h"
