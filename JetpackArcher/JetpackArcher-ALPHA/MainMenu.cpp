@@ -59,6 +59,7 @@ void MainMenu::UpdateScene(float dt)
 
 void MainMenu::CheckClick(POINT mousePos, JetpackArcher* instance)
 {
+
 	//if start button clicked
 	if (mousePos.x > playBB.pos.x && mousePos.x < playBB.pos.x + playBB.width &&
 		mousePos.y > playBB.pos.y && mousePos.y < playBB.pos.y + playBB.height)
@@ -72,8 +73,8 @@ void MainMenu::CheckClick(POINT mousePos, JetpackArcher* instance)
 		instance->SetState(JetpackArcher::States::CREDITS);
 	}
 	//if quit button clicked
-	else if (mousePos.x > creditsBB.pos.x && mousePos.x < creditsBB.pos.x + creditsBB.width &&
-		mousePos.y > creditsBB.pos.y && mousePos.y < creditsBB.pos.y + creditsBB.height)
+	else if (mousePos.x > quitBB.pos.x && mousePos.x < quitBB.pos.x + quitBB.width &&
+		mousePos.y > quitBB.pos.y && mousePos.y < quitBB.pos.y + quitBB.height)
 	{
 		exit(0);
 	}

@@ -61,8 +61,8 @@ void GameOver::CheckClick(POINT mousePos, JetpackArcher* instance)
 		instance->SetState(JetpackArcher::States::GAME);
 	}
 	//if Quit button clicked
-	else if (mousePos.x > tryAgainBB.pos.x && mousePos.x < tryAgainBB.pos.x + tryAgainBB.width &&
-			 mousePos.y > tryAgainBB.pos.y && mousePos.y < tryAgainBB.pos.y + tryAgainBB.height)
+	else if (mousePos.x > quitBB.pos.x && mousePos.x < quitBB.pos.x + quitBB.width &&
+		mousePos.y > quitBB.pos.y && mousePos.y < quitBB.pos.y + quitBB.height)
 	{
 		exit(0);
 	}
