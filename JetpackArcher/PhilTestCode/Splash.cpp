@@ -1,12 +1,12 @@
-#include "GameWon.h"
+#include "Splash.h"
 #include "JetpackArcher.h"
 
-GameWon::GameWon() : mBG(0)
+Splash::Splash() : mBG(0)
 {
 }
 
 
-GameWon::~GameWon()
+Splash::~Splash()
 {
 	if (mBG)
 	{
@@ -15,11 +15,11 @@ GameWon::~GameWon()
 	}
 }
 
-void GameWon::Init(ID3D11Device* device, UINT16 clientW, UINT16 clientH)
+void Splash::Init(ID3D11Device* device, UINT16 clientW, UINT16 clientH)
 {
 	Sprite::Frame* BGFrame = new Sprite::Frame();
 	ID3D11ShaderResourceView* BGimage;
-	D3DX11CreateShaderResourceViewFromFile(device, L"Textures/WinBackground.png", 0, 0, &BGimage, 0);
+	HR(D3DX11CreateShaderResourceViewFromFile(device, L"Textures/menuBackground.png", 0, 0, &BGimage, 0));
 	//bg frame
 	BGFrame->imageWidth = 1024;
 	BGFrame->imageHeight = 768;
@@ -34,13 +34,12 @@ void GameWon::Init(ID3D11Device* device, UINT16 clientW, UINT16 clientH)
 
 }
 
-void GameWon::DrawScene(CXMMATRIX vp, ID3D11DeviceContext* context, LitTexEffect* texEffect)
+void Splash::DrawScene(CXMMATRIX vp, ID3D11DeviceContext* context, LitTexEffect* texEffect)
 {
 	mBG->Draw(vp, context, texEffect);
 }
 
-void GameWon::UpdateScene(float dt)
+void Splash::UpdateScene(float dt)
 {
-
 	mBG->Update(dt);
 }
