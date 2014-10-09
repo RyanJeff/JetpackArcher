@@ -135,13 +135,6 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	BuildBlendStates(md3dDevice);
 	BuildDSStates(md3dDevice);
 
-	//font
-	ID3D11ShaderResourceView* font;
-	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/fontW.png", 0, 0, &font, 0);
-	//mHealthFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
-	//mFuelFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
-	//mControlsFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
-
 	//projectile image
 	ID3D11ShaderResourceView* projImage;
 	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/arrow.png", 0, 0, &projImage, 0);
@@ -455,7 +448,7 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	//background
 	mBG = new Sprite(XMVectorSet(512.0f, 384.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice, 0.0f);
-	//controls font
+	//controls font (image)
 	mControlsFont = new Sprite(XMVectorSet(800.0f, 100.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		411.0f, 203.0f, 1.0f, cfFrame, 0.25f, md3dDevice, 0.0f);
 
@@ -994,10 +987,6 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 		if (PlayerEnemyCollision(mPlayer, enemies[i]) && recoverTime == 0.0f)
 		{
 			enemies[i]->ApplyDamage(mPlayer);
-			/*std::wstringstream ss;
-			ss << mPlayer->GetHealth();
-			OutputDebugString(ss.str().c_str());
-			OutputDebugString(L"\n");*/
 			recoverTime = 3.0f;   //player has 3 seconds before damage can be done to him again
 		}
 	}
@@ -1029,7 +1018,6 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 	{
 		enemies[i]->Update(dt);
 		enemies[i]->Chase(enemies, mPlayer, dt);
-
 		//set health bars to above enemies' heads and red bar to adjust accordingly
 		redXPos = enemies[i]->GetPos().m128_f32[0];
 		currHealth = enemies[i]->GetHealth();
@@ -1040,16 +1028,13 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 		greenBarVec[i]->SetPos(XMVectorSet(enemies[i]->GetPos().m128_f32[0], enemies[i]->GetPos().m128_f32[1] + 32, 0.0f, 0.0f));
 		redBarVec[i]->SetPos(XMVectorSet(redXPos, enemies[i]->GetPos().m128_f32[1] + 32, 0.0f, 0.0f));
 		redBarVec[i]->SetScale(XMVectorSet(redXScale, 1.0f, 0.0f, 0.0f));
-
 		//collision checks between enemies and playerBB		
 		SpriteRectCollision(enemies[i], playerBB);
-
 		//collision checks between enemies and environmentBBs
 		for (int j = 0; j < boxes.size(); ++j)
 		{
 			SpriteRectCollision(enemies[i], boxes[j]);
 		}
-
 		//delete enemy upon death
 		if (enemies[i]->GetHealth() == 0)
 		{
@@ -1098,10 +1083,6 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 			if (EnemyProjCollision(enemies[j], mProjectiles[i]))
 			{
 				mProjectiles[i]->ApplyDamage(enemies[j]);
-				/*std::wstringstream ss;
-				ss << enemies[j]->GetHealth();
-				OutputDebugString(ss.str().c_str());
-				OutputDebugString(L"\n");*/
 				delete mProjectiles[i];
 				mProjectiles.erase(mProjectiles.begin() + i);
 				i--;
@@ -1112,7 +1093,6 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 
 	mGreenFuel->Update(dt);
 	mRedFuel->Update(dt);
-
 	EOLobj->Update(dt);
 }
 
@@ -1161,7 +1141,6 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 		mPlayer->SetScale(XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f));
 	}
 	mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
-	//md3dImmediateContext->RSSetState(0);
 
 	//draw player health bar
 	mGreenHBarP->Draw(vp, md3dImmediateContext, mLitTexEffect);
@@ -1197,7 +1176,7 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 
 	if (controlsTimer <= 5.0f)
 	{
-		//draw controls font
+		//draw controls font image
 		mControlsFont->Draw(vp, md3dImmediateContext, mLitTexEffect);
 	}
 
@@ -1266,7 +1245,7 @@ void Game::UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt)
 	if (GetAsyncKeyState(VK_UP) & 0x8000)
 	{
 		//can't jump while jetpack in use
-		if (!GetAsyncKeyState(VK_LCONTROL) || !GetAsyncKeyState(VK_RCONTROL))
+		if (!GetAsyncKeyState(VK_LCONTROL) & 0x8000 || !GetAsyncKeyState(VK_RCONTROL) & 0x8000)
 		{
 			//jump
 			mPlayer->Jump();
@@ -1283,7 +1262,7 @@ void Game::UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt)
 				mFuel--;
 				fuelRecoverTime = 0.0f;
 			}
-			//set fuel health bar
+			//set fuel bar
 			redXPosF = 60.0f;
 			currHealthF = mFuel;
 			maxHealthF = 5.0f;
@@ -1293,10 +1272,7 @@ void Game::UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt)
 			mGreenFuel->SetPos(XMVectorSet(60.0f, 698.0f, 0.0f, 0.0f));
 			mRedFuel->SetPos(XMVectorSet(redXPosF, 698.0f, 0.0f, 0.0f));
 			mRedFuel->SetScale(XMVectorSet(redXScaleF, 1.0f, 0.0f, 0.0f));
-			/*std::wstringstream ss;
-			ss << mFuel;
-			OutputDebugString(ss.str().c_str());
-			OutputDebugString(L"\n");*/
+
 			mPlayer->UseJetpack(dt);
 		}
 		if (mFuel == 0)

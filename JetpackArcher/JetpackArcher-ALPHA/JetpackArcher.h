@@ -20,7 +20,7 @@ Controls - LEFT ARROW to move left
 #include "Enemy.h"
 #include "Projectile.h"
 #include "Effect.h"
-#include "FontRasterizer.h"
+#include "BaseCamera.h"
 #include "Sprite.h"
 #include "xnacollision.h"
 #include "fmod.hpp"

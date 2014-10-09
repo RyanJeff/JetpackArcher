@@ -54,22 +54,6 @@ JetpackArcher::~JetpackArcher()
 
 	if(mLitTexEffect)
 		delete mLitTexEffect;
-
-	//if (splash)
-	//	delete splash;
-
-	//if (mainMenu)
-	//	delete mainMenu;
-
-	//if (credits)
-	//	delete credits;
-
-	//if (gameWon)
-	//	delete gameWon;
-
-	//if (gameOver)
-	//	delete gameOver;
-
 }
 
 FMOD_RESULT result;
@@ -130,21 +114,6 @@ bool JetpackArcher::Init()
 	splash = new Splash();
 	splash->Init(md3dDevice, mClientWidth, mClientHeight);
 
-	//mainMenu = new MainMenu();
-	//mainMenu->Init(md3dDevice, mClientWidth, mClientHeight);
-
-	//credits = new Credits();
-	//credits->Init(md3dDevice, mClientWidth, mClientHeight);
-
-	//game = new Game();
-	//game->Init(md3dDevice);
-
-	//gameWon = new GameWon();
-	//gameWon->Init(md3dDevice, mClientWidth, mClientHeight);
-
-	//gameOver = new GameOver();
-	//gameOver->Init(md3dDevice, mClientWidth, mClientHeight);
-
 	//result = sys->playSound(sound1, 0, false, &channel);
 
 	return true;
@@ -178,12 +147,6 @@ void JetpackArcher::UpdateScene(float dt)
 	md3dDevice->CreateRasterizerState(&rsd, &rs);
 	md3dImmediateContext->RSSetState(rs);
 	UpdateKeyboardInput(dt);
-
-	//md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::White));
-	//md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-	//md3dImmediateContext->IASetInputLayout(Vertex::GetNormalTexVertLayout());
-	//md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	switch (GetState())
 	{

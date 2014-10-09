@@ -12,7 +12,7 @@
 #include "Enemy.h"
 #include "Projectile.h"
 #include "Effect.h"
-#include "FontRasterizer.h"
+#include "BaseCamera.h"
 #include "Sprite.h"
 #include "xnacollision.h"
 #include "fmod.hpp"
@@ -78,10 +78,6 @@ private:
 	ParticleEffect* mParticleEffect;
 
 	BaseCamera* m2DCam;
-
-	//FontRasterizer* mHealthFont;
-	//FontRasterizer* mFuelFont;
-	//FontRasterizer* mControlsFont;
 
 	XMFLOAT4X4 mView;
 	XMFLOAT4X4 mProj;
