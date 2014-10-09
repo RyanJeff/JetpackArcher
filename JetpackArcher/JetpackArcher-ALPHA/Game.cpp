@@ -1,7 +1,7 @@
 #include "Game.h"
 #include "JetpackArcher.h"
 
-Game::Game() : mLitTexEffect(0), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEnemy2(0), mEnemy3(0),
+Game::Game() : mLitTexEffect(0), m2DCam(0), mPlayer(0), mBG(0), mControlsFont(0), mEnemy1(0), mEnemy2(0), mEnemy3(0),
 	mEnemy4(0), mEnemy5(0), mEnemy6(0), mGreenHBar(0), mRedHBar(0), mGreenHBarP(0), mRedHBarP(0), 
 	mRedFuel(0), mGreenFuel(0), EOLobj(0)
 {
@@ -20,68 +20,98 @@ Game::Game() : mLitTexEffect(0), m2DCam(0), mPlayer(0), mBG(0), mEnemy1(0), mEne
 
 Game::~Game()
 {
-	Vertex::CleanLayouts();
-
 	if (mLitTexEffect)
+	{
 		delete mLitTexEffect;
+		mLitTexEffect = 0;
+	}
 
 	if (m2DCam)
+	{
 		delete m2DCam;
+		m2DCam = 0;
+	}
 
 	if (mPlayer)
+	{
 		delete mPlayer;
+		mPlayer = 0;
+	}
 
 	for (int i = 0; i < enemies.size(); ++i)
 	{
 		if (enemies[i])
+		{
 			delete enemies[i];
+			enemies[i] = 0;
+		}
+
 		if (redBarVec[i])
+		{
 			delete redBarVec[i];
+			redBarVec[i] = 0;
+		}
+
 		if (greenBarVec[i])
+		{
 			delete greenBarVec[i];
+			greenBarVec[i] = 0;
+		}
 	}
 
-	if (mGreenHBar)
-		delete mGreenHBar;
-
-	if (mRedHBar)
-		delete mRedHBar;
-
-	if (mGreenHBarP)
-		delete mGreenHBarP;
-
-	if (mRedHBarP)
-		delete mRedHBarP;
-
-	if (mGreenFuel)
-		delete mGreenFuel;
-
-	if (mRedFuel)
-		delete mRedFuel;
-
 	if (EOLobj)
+	{
 		delete EOLobj;
+		EOLobj = 0;
+	}
+
+	if (mControlsFont)
+	{
+		delete mControlsFont;
+		mControlsFont = 0;
+	}
 
 	if (mBG)
+	{
 		delete mBG;
+		mBG = 0;
+	}
 
 	if (mParticleEffect)
+	{
 		delete mParticleEffect;
+		mParticleEffect = 0;
+	}
 
 	if (mParticleVB)
+	{
 		ReleaseCOM(mParticleVB);
+		mParticleVB = 0;
+	}
 
 	if (mParticleTexture)
+	{
 		ReleaseCOM(mParticleTexture);
+		mParticleTexture = 0;
+	}
 
 	if (mAdditiveBS)
+	{
 		ReleaseCOM(mAdditiveBS);
+		mAdditiveBS = 0;
+	}
 
 	if (mTransparentBS)
+	{
 		ReleaseCOM(mTransparentBS);
+		mTransparentBS = 0;
+	}
 
 	if (mNoDepthDS)
+	{
 		ReleaseCOM(mNoDepthDS);
+		mNoDepthDS = 0;
+	}
 }
 
 bool Game::Init(ID3D11Device* md3dDevice)
@@ -108,9 +138,9 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	//font
 	ID3D11ShaderResourceView* font;
 	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/fontW.png", 0, 0, &font, 0);
-	mHealthFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
-	mFuelFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
-	mControlsFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
+	//mHealthFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
+	//mFuelFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
+	//mControlsFont = new FontRasterizer(m2DCam, XMLoadFloat4x4(&m2DProj), mLitTexEffect, 10, 10, font, md3dDevice);
 
 	//projectile image
 	ID3D11ShaderResourceView* projImage;
@@ -135,6 +165,18 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	BGFrame->image = BGimage;
 	std::vector<Sprite::Frame*> bgFrame;
 	bgFrame.push_back(BGFrame);
+
+	//controls font image
+	Sprite::Frame* CFFrame = new Sprite::Frame();
+	ID3D11ShaderResourceView* CFimage;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/controlsFont.png", 0, 0, &CFimage, 0);
+	//controls font frame
+	CFFrame->imageWidth = 411;
+	CFFrame->imageHeight = 203;
+	CFFrame->x = 0;
+	CFFrame->y = 0;
+	CFFrame->image = CFimage;
+	cfFrame.push_back(CFFrame);
 
 	//Player spritesheet image
 	Sprite::Frame* newFrame = new Sprite::Frame();
@@ -413,6 +455,10 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	//background
 	mBG = new Sprite(XMVectorSet(512.0f, 384.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, md3dDevice, 0.0f);
+	//controls font
+	mControlsFont = new Sprite(XMVectorSet(800.0f, 100.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		411.0f, 203.0f, 1.0f, cfFrame, 0.25f, md3dDevice, 0.0f);
+
 	//player
 	mPlayer = new Player(XMVectorSet(512.0f, 384.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		32, 32, 0.1f, frames, 0.25f, md3dDevice, 3.0f);
@@ -456,8 +502,7 @@ bool Game::Init(ID3D11Device* md3dDevice)
 		96.0f, 16.0f, 1.0f, hbFrameG, 0.25f, md3dDevice, 0.0f);
 	mRedHBarP = new Sprite(XMVectorSet(redXPosP, 736.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), 
 		96.0f, 16.0f, 1.0f, hbFrameR, 0.25f, md3dDevice, 0.0f);
-
-	//fuel bar
+	//jetpack fuel bar
 	mGreenFuel = new Sprite(XMVectorSet(60.0f, 698.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		96.0f, 16.0f, 1.0f, fbFrameG, 0.25f, md3dDevice, 0.0f);
 	mRedFuel = new Sprite(XMVectorSet(redXPosF, 698.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
@@ -897,6 +942,8 @@ bool Game::PlayerEnemyCollision(Sprite* player, Sprite* enemy)
 
 void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* md3dDevice, float dt, JetpackArcher* instance)
 {
+	controlsTimer += dt;
+
 	ID3D11RasterizerState* rs;
 	D3D11_RASTERIZER_DESC rsd;
 	rsd.CullMode = D3D11_CULL_NONE;
@@ -1098,7 +1145,6 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 
 	mBG->Draw(vp, md3dImmediateContext, mLitTexEffect);
 
-
 	//draw end of level object
 	if (EOLobjActive)
 	{
@@ -1115,7 +1161,7 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 		mPlayer->SetScale(XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f));
 	}
 	mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
-	md3dImmediateContext->RSSetState(0);
+	//md3dImmediateContext->RSSetState(0);
 
 	//draw player health bar
 	mGreenHBarP->Draw(vp, md3dImmediateContext, mLitTexEffect);
@@ -1138,22 +1184,27 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 	//draw arrow projectiles
 	for (int i = 0; i < mProjectiles.size(); ++i)
 	{
+		if (isFacingRight)
+		{
+			mProjectiles[i]->SetScale(XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f));
+		}
+		else if (!isFacingRight)
+		{
+			mProjectiles[i]->SetScale(XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f));
+		}
 		mProjectiles[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
+	}
+
+	if (controlsTimer <= 5.0f)
+	{
+		//draw controls font
+		mControlsFont->Draw(vp, md3dImmediateContext, mLitTexEffect);
 	}
 
 	DrawParticles(md3dImmediateContext);
 
-	//draw HUD font
-	mHealthFont->DrawFont(md3dImmediateContext, XMVectorSet(60.0f, 732.0f, 0.0f, 0.0f), 96, 20, 10, "Health"/*, vp*/);
-	mFuelFont->DrawFont(md3dImmediateContext, XMVectorSet(60.0f, 704.0f, 0.0f, 0.0f), 96, 20, 10, "Jetpack Fuel"/*, vp*/);
-	//make a timer for this font
-	mControlsFont->DrawFont(md3dImmediateContext, XMVectorSet(600.0f, 100.0f, 0.0f, 0.0f), 50, 50, 21,
-		"Controls: UP to Jump, SPACE to Fire Arrow, Hold CTRL for Jetpack"/*, vp*/);
-
 	md3dImmediateContext->OMSetDepthStencilState(0, 0);
 	md3dImmediateContext->OMSetBlendState(0, blendFactor, 0xffffffff);
-
-	
 }
 
 void Game::OnMouseDown(HWND mhMainWnd, WPARAM btnState, int x, int y)
@@ -1242,12 +1293,10 @@ void Game::UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt)
 			mGreenFuel->SetPos(XMVectorSet(60.0f, 698.0f, 0.0f, 0.0f));
 			mRedFuel->SetPos(XMVectorSet(redXPosF, 698.0f, 0.0f, 0.0f));
 			mRedFuel->SetScale(XMVectorSet(redXScaleF, 1.0f, 0.0f, 0.0f));
-
-			std::wstringstream ss;
+			/*std::wstringstream ss;
 			ss << mFuel;
 			OutputDebugString(ss.str().c_str());
-			OutputDebugString(L"\n");
-
+			OutputDebugString(L"\n");*/
 			mPlayer->UseJetpack(dt);
 		}
 		if (mFuel == 0)
@@ -1270,7 +1319,7 @@ void Game::UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt)
 			if (!isFacingRight)
 			{
 				Projectile* arrowProjectile = new Projectile(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - 8, 0.0f, 0.0f),
-					XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, 0.0f, XMVectorSet(-250.0f, 0.0f, 0.0f, 0.0f));
+					XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, 0.0f, XMVectorSet(-250.0f, 0.0f, 0.0f, 0.0f));
 				mProjectiles.push_back(arrowProjectile);
 				canShoot = false;
 			}

@@ -179,11 +179,11 @@ void JetpackArcher::UpdateScene(float dt)
 	md3dImmediateContext->RSSetState(rs);
 	UpdateKeyboardInput(dt);
 
-	md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::White));
-	md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	//md3dImmediateContext->ClearRenderTargetView(mRenderTargetView, reinterpret_cast<const float*>(&Colors::White));
+	//md3dImmediateContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	md3dImmediateContext->IASetInputLayout(Vertex::GetNormalTexVertLayout());
-	md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//md3dImmediateContext->IASetInputLayout(Vertex::GetNormalTexVertLayout());
+	//md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	switch (GetState())
 	{
@@ -344,6 +344,10 @@ void JetpackArcher::OnMouseDown(WPARAM btnState, int x, int y)
 	{
 		gameOver->CheckClick(mLastMousePos, this);
 	}
+	else if (gameWon)
+	{
+		gameWon->CheckClick(mLastMousePos, this);
+	}
 }
 
 void JetpackArcher::OnMouseUp(WPARAM btnState, int x, int y)
@@ -453,13 +457,21 @@ JetpackArcher::States JetpackArcher::GetState()
 {
 	if (mCurrState == GAME_OVER)
 	{
-		gameOver = new GameOver();
-		gameOver->Init(md3dDevice, mClientWidth, mClientHeight);
+		if (!gameOver)
+		{
+			Destroy();
+			gameOver = new GameOver();
+			gameOver->Init(md3dDevice, mClientWidth, mClientHeight);
+		}
 	}
 	else if (mCurrState == GAME_WON)
 	{
-		gameWon = new GameWon();
-		gameWon->Init(md3dDevice, mClientWidth, mClientHeight);
+		if (!gameWon)
+		{
+			Destroy();
+			gameWon = new GameWon();
+			gameWon->Init(md3dDevice, mClientWidth, mClientHeight);
+		}
 	}
 
 	return mCurrState;

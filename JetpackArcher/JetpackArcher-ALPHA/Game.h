@@ -79,15 +79,16 @@ private:
 
 	BaseCamera* m2DCam;
 
-	FontRasterizer* mHealthFont;
-	FontRasterizer* mFuelFont;
-	FontRasterizer* mControlsFont;
+	//FontRasterizer* mHealthFont;
+	//FontRasterizer* mFuelFont;
+	//FontRasterizer* mControlsFont;
 
 	XMFLOAT4X4 mView;
 	XMFLOAT4X4 mProj;
 	XMFLOAT4X4 m2DProj;
 
 	Sprite* mBG;
+	Sprite* mControlsFont;
 
 	Sprite* mGreenHBar;
 	std::vector<Sprite*> greenBarVec;
@@ -164,6 +165,7 @@ public:
 	std::vector<Sprite::Frame*> fbFrameR;
 	std::vector<Sprite::Frame*> projFrame;
 	std::vector<Sprite::Frame*> EOLobjFrames;
+	std::vector<Sprite::Frame*> cfFrame;
 
 	float cooldownTimer = 0.0f;
 	bool canShoot = true;
@@ -193,4 +195,6 @@ public:
 	bool canUseJetpack = true;
 
 	bool EOLobjActive = false;
+
+	float controlsTimer = 0.0f;
 };

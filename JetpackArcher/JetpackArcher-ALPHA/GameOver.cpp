@@ -9,8 +9,8 @@ GameOver::~GameOver()
 {
 	if (mBG)
 	{
-		//mBG = 0;
 		delete mBG;
+		mBG = 0;
 	}
 }
 
@@ -33,13 +33,13 @@ void GameOver::Init(ID3D11Device* device, UINT16 clientW, UINT16 clientH)
 
 	//Try Again? bounding box
 	tryAgainBB.pos = XMFLOAT2(384.0f, 300.0f);
-	tryAgainBB.height = 57.0f;
+	tryAgainBB.height = 58.0f;
 	tryAgainBB.width = 288.0f;
 
 	//Quit bounding box
 	quitBB.pos = XMFLOAT2(460.0f, 376.0f);
 	quitBB.height = 58.0f;
-	quitBB.width = 460.0f;
+	quitBB.width = 144.0f;
 }
 
 void GameOver::DrawScene(CXMMATRIX vp, ID3D11DeviceContext* context, LitTexEffect* texEffect)

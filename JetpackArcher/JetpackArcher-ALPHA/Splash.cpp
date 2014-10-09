@@ -11,6 +11,7 @@ Splash::~Splash()
 	if (mBG)
 	{
 		delete mBG;
+		mBG = 0;
 	}
 }
 
@@ -30,7 +31,6 @@ void Splash::Init(ID3D11Device* device, UINT16 clientW, UINT16 clientH)
 
 	mBG = new Sprite(XMVectorSet(clientW / 2.0f, clientH / 2.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, device, 0.0f);
-
 }
 
 void Splash::DrawScene(CXMMATRIX vp, ID3D11DeviceContext* context, LitTexEffect* texEffect)

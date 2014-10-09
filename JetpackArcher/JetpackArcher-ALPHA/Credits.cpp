@@ -11,8 +11,8 @@ Credits::~Credits()
 {
 	if (mBG)
 	{
-		//mBG = 0;
 		delete mBG;
+		mBG = 0;
 	}
 }
 
@@ -34,7 +34,7 @@ void Credits::Init(ID3D11Device* device, UINT16 clientW, UINT16 clientH)
 		1024.0f, 768.0f, 1.0f, bgFrame, 0.25f, device, 0.0f);
 
 	//back button bounding box
-	backBB.pos = XMFLOAT2(416.0f, (630.0f));
+	backBB.pos = XMFLOAT2(416.0f, 630.0f);
 	backBB.height = 68.0f;
 	backBB.width = 192.0f;
 }
