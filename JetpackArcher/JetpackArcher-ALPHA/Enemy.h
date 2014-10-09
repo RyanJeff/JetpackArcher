@@ -17,4 +17,7 @@ public:
 	void Chase(std::vector<Enemy*>& chaser, Sprite* target, float dt);
 
 	void Update(float dt);
+
+	XMVECTOR velocity;
+	float maxVelocity = 12.0f;
 };

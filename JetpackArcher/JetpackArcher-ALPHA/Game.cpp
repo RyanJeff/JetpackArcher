@@ -1245,11 +1245,11 @@ void Game::UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt)
 	if (GetAsyncKeyState(VK_UP) & 0x8000)
 	{
 		//can't jump while jetpack in use
-		if (!GetAsyncKeyState(VK_LCONTROL) & 0x8000 || !GetAsyncKeyState(VK_RCONTROL) & 0x8000)
-		{
+		//if (!GetAsyncKeyState(VK_LCONTROL) & 0x8000 || !GetAsyncKeyState(VK_RCONTROL) & 0x8000)
+		//{
 			//jump
 			mPlayer->Jump();
-		}
+		//}
 	}
 	if (GetAsyncKeyState(VK_LCONTROL) & 0x8000 || GetAsyncKeyState(VK_RCONTROL) & 0x8000)
 	{
