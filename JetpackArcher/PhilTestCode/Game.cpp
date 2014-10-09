@@ -1142,7 +1142,7 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 		mPlayer->SetScale(XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f));
 	}
 	mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
-	md3dImmediateContext->RSSetState(0);
+	//md3dImmediateContext->RSSetState(0);
 
 	//draw player health bar
 	mGreenHBarP->Draw(vp, md3dImmediateContext, mLitTexEffect);
@@ -1165,6 +1165,14 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 	//draw arrow projectiles
 	for (int i = 0; i < mProjectiles.size(); ++i)
 	{
+		if (isFacingRight)
+		{
+			mProjectiles[i]->SetScale(XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f));
+		}
+		else if (!isFacingRight)
+		{
+			mProjectiles[i]->SetScale(XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f));
+		}
 		mProjectiles[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
 	}
 
@@ -1297,7 +1305,7 @@ void Game::UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt)
 			if (!isFacingRight)
 			{
 				Projectile* arrowProjectile = new Projectile(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - 8, 0.0f, 0.0f),
-					XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, 0.0f, XMVectorSet(-250.0f, 0.0f, 0.0f, 0.0f));
+					XMVectorSet(-1.0f, 1.0f, 0.0f, 0.0f), 22, 9, 0.5f, projFrame, 0.25f, md3dDevice, 0.0f, XMVectorSet(-250.0f, 0.0f, 0.0f, 0.0f));
 				mProjectiles.push_back(arrowProjectile);
 				canShoot = false;
 			}
