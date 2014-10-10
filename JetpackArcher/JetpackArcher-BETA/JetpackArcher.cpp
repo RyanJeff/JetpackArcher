@@ -61,6 +61,7 @@ FMOD::System     *sys;
 FMOD::Sound      *sound1, *sound2, *sound3;
 FMOD::Channel    *channel = 0;
 FMOD::Channel	 *channel2 = 0;
+FMOD::Channel	 *channel3 = 0;
 unsigned int      version;
 void             *extradriverdata = 0;
 
@@ -105,6 +106,10 @@ bool JetpackArcher::Init()
 	result = result = sys->init(32, FMOD_INIT_NORMAL, extradriverdata);
 	result = sys->createSound("Sounds/TFADenofThieves.mp3", FMOD_DEFAULT, 0, &sound2);  // BGM
 	result = sound2->setMode(FMOD_LOOP_NORMAL);
+
+	result = result = sys->init(32, FMOD_INIT_NORMAL, extradriverdata);
+	result = sys->createSound("Sounds/jetpack.ogg", FMOD_DEFAULT, 0, &sound3);  // jetpack SFX
+	result = sound3->setMode(FMOD_LOOP_OFF);
 
 	mLitTexEffect = new LitTexEffect();
 	mLitTexEffect->LoadEffect(L"FX/lighting.fx", md3dDevice);
@@ -345,8 +350,18 @@ void JetpackArcher::UpdateKeyboardInput(float dt)
 		channel2->isPlaying(&isPlaying);
 		if (!isPlaying)
 		{
-			//FMOD_System_PlaySound(sys, sound1, NULL, false, NULL);
 			result = sys->playSound(sound1, 0, false, &channel2);
+		}
+	}
+
+	if (GetAsyncKeyState(VK_LCONTROL) & 0x8000)
+	{
+		//arrow sfx
+		bool isPlaying = false;
+		channel2->isPlaying(&isPlaying);
+		if (!isPlaying)
+		{
+			result = sys->playSound(sound3, 0, false, &channel3);
 		}
 	}
 }
