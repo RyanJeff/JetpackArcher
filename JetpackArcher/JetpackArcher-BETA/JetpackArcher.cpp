@@ -61,19 +61,18 @@ FMOD::System     *sys;
 FMOD::Sound      *sound1, *sound2, *sound3;
 FMOD::Channel    *channel = 0;
 FMOD::Channel	 *channel2 = 0;
-FMOD::Channel	 *channel3 = 0;
 unsigned int      version;
 void             *extradriverdata = 0;
 
 void JetpackArcher::BuildSceneLights()
 {
-	/* test code, test a point light out 
+	/* test code, test a point light out */
 	mPointLight.pos = XMFLOAT3(50.0f, 50.0f, 50.0f);
 	mPointLight.lightColour = XMFLOAT4(0.75f, 0.75f, 0.75f, 1.0f);
 	mPointLight.range = 1000.0f;
 	mPointLight.att = XMFLOAT3(0.0f, 0.02f, 0.0f);
 	mPointLight.pad = 0.0f;
-	*/
+
 	mSpotLight.pos = XMFLOAT3(m2DCam->GetPos().m128_f32[0], m2DCam->GetPos().m128_f32[1], m2DCam->GetPos().m128_f32[2]);
 
 	mSpotLight.lightColour = XMFLOAT4(0.75f, 0.75f, 0.75f, 1.0f);
@@ -99,17 +98,14 @@ bool JetpackArcher::Init()
 	{
 		OutputDebugString(L"FMOD lib version doesn't match header version");
 	}
+	//fire arrow sfx
 	result = sys->init(32, FMOD_INIT_NORMAL, extradriverdata);
-	result = sys->createSound("Sounds/choo.ogg", FMOD_DEFAULT, 0, &sound1);  //fire arrow sfx (placeholder?)
+	result = sys->createSound("Sounds/choo.ogg", FMOD_DEFAULT, 0, &sound1);
 	result = sound1->setMode(FMOD_LOOP_OFF);
-
+	//background music
 	result = result = sys->init(32, FMOD_INIT_NORMAL, extradriverdata);
-	result = sys->createSound("Sounds/TFADenofThieves.mp3", FMOD_DEFAULT, 0, &sound2);  // BGM
+	result = sys->createSound("Sounds/TFADenofThieves.mp3", FMOD_DEFAULT, 0, &sound2);
 	result = sound2->setMode(FMOD_LOOP_NORMAL);
-
-	result = result = sys->init(32, FMOD_INIT_NORMAL, extradriverdata);
-	result = sys->createSound("Sounds/jetpack.ogg", FMOD_DEFAULT, 0, &sound3);  // jetpack SFX
-	result = sound3->setMode(FMOD_LOOP_OFF);
 
 	mLitTexEffect = new LitTexEffect();
 	mLitTexEffect->LoadEffect(L"FX/lighting.fx", md3dDevice);
@@ -125,8 +121,6 @@ bool JetpackArcher::Init()
 	splash->Init(md3dDevice, mClientWidth, mClientHeight);
 
 	result = sys->playSound(sound2, 0, false, &channel);
-
-
 
 	return true;
 }
@@ -171,7 +165,7 @@ void JetpackArcher::UpdateScene(float dt)
 			SetState(SPLASH);
 		}
 		splashTimer += dt;
-		if (splashTimer >= 2.0f)
+		if (splashTimer >= 1.5f)
 		{
 			mainMenu = new MainMenu();
 			mainMenu->Init(md3dDevice, mClientWidth, mClientHeight);
@@ -351,17 +345,6 @@ void JetpackArcher::UpdateKeyboardInput(float dt)
 		if (!isPlaying)
 		{
 			result = sys->playSound(sound1, 0, false, &channel2);
-		}
-	}
-
-	if (GetAsyncKeyState(VK_LCONTROL) & 0x8000)
-	{
-		//arrow sfx
-		bool isPlaying = false;
-		channel2->isPlaying(&isPlaying);
-		if (!isPlaying)
-		{
-			result = sys->playSound(sound3, 0, false, &channel3);
 		}
 	}
 }

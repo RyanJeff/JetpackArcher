@@ -52,17 +52,13 @@ public:
 	virtual void OnMouseMove(WPARAM btnState, int x, int y);
 
 private:
-	void BuildParticleVB(ID3D11Device* md3dDevice);
 	void BuildBlendStates(ID3D11Device* md3dDevice);
 	void BuildDSStates(ID3D11Device* md3dDevice);
-	void UpdateParticleVB(ID3D11DeviceContext* md3dImmediateContext);
 
 	ID3D11BlendState* mAdditiveBS;
 	ID3D11BlendState* mTransparentBS;
 	ID3D11DepthStencilState* mFontDS;
 	ID3D11DepthStencilState* mNoDepthDS;
-
-	ID3D11Buffer* mParticleVB;
 
 	void BuildVertexLayout();
 	void UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt);
@@ -72,10 +68,7 @@ private:
 	bool EnemyProjCollision(Sprite* sprite, Projectile* arrow);
 	bool PlayerEnemyCollision(Sprite* player, Sprite* enemy);
 
-	void DrawParticles(ID3D11DeviceContext* md3dImmediateContext);
-
 	LitTexEffect* mLitTexEffect;
-	ParticleEffect* mParticleEffect;
 
 	BaseCamera* m2DCam;
 
@@ -97,6 +90,9 @@ private:
 	Sprite* mRedFuel;
 
 	Player* mPlayer;
+
+	Sprite* mFlame;
+	bool drawFlame = false;
 
 	Enemy* mEnemy1;
 	Enemy* mEnemy2;

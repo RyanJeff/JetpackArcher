@@ -77,24 +77,6 @@ Game::~Game()
 		mBG = 0;
 	}
 
-	if (mParticleEffect)
-	{
-		delete mParticleEffect;
-		mParticleEffect = 0;
-	}
-
-	if (mParticleVB)
-	{
-		ReleaseCOM(mParticleVB);
-		mParticleVB = 0;
-	}
-
-	if (mParticleTexture)
-	{
-		ReleaseCOM(mParticleTexture);
-		mParticleTexture = 0;
-	}
-
 	if (mAdditiveBS)
 	{
 		ReleaseCOM(mAdditiveBS);
@@ -118,17 +100,11 @@ bool Game::Init(ID3D11Device* md3dDevice)
 {
 	mLitTexEffect = new LitTexEffect();
 	mLitTexEffect->LoadEffect(L"FX/lighting.fx", md3dDevice);
-
-	mParticleEffect = new ParticleEffect();
-	mParticleEffect->LoadEffect(L"FX/ParticleEffect.fx", md3dDevice);
-
 	//camera
 	m2DCam = new BaseCamera(XMVectorSet(0.0f, 0.0f, -0.5f, 0.0f), XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
 	m2DCam->Update();
 
-	Vertex::InitParticleVertLayout(md3dDevice, mParticleEffect->GetTech());
-
-	BuildParticleVB(md3dDevice);
+	//Vertex::InitParticleVertLayout(md3dDevice, mParticleEffect->GetTech());
 
 	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/TestAdditive.png", 0, 0, &mParticleTexture, 0);
 
@@ -170,6 +146,19 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	CFFrame->y = 0;
 	CFFrame->image = CFimage;
 	cfFrame.push_back(CFFrame);
+
+	//Jetpack Flame spritesheet image
+	Sprite::Frame* flameFrame = new Sprite::Frame();
+	ID3D11ShaderResourceView* flameImage;
+	D3DX11CreateShaderResourceViewFromFile(md3dDevice, L"Textures/flame.png", 0, 0, &flameImage, 0);
+	//flame frame1
+	flameFrame->imageWidth = 16;
+	flameFrame->imageHeight = 16;
+	flameFrame->x = 0;
+	flameFrame->y = 0;
+	flameFrame->image = flameImage;
+	std::vector<Sprite::Frame*> flameFrames;
+	flameFrames.push_back(flameFrame);
 
 	//Player spritesheet image
 	Sprite::Frame* newFrame = new Sprite::Frame();
@@ -451,10 +440,12 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	//controls font (image)
 	mControlsFont = new Sprite(XMVectorSet(800.0f, 100.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		411.0f, 203.0f, 1.0f, cfFrame, 0.25f, md3dDevice, 0.0f);
-
 	//player
 	mPlayer = new Player(XMVectorSet(512.0f, 384.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		32, 32, 0.1f, frames, 0.25f, md3dDevice, 3.0f);
+	//Jetpack flame
+	mFlame = new Sprite(XMVectorSet(mPlayer->GetPos().m128_f32[0], mPlayer->GetPos().m128_f32[1] - 16, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
+		16.0f, 16.0f, 0.1f, flameFrames, 0.25f, md3dDevice, 0.0f);
 	//enemy1
 	mEnemy1 = new Enemy(XMVectorSet(800.0f, 500.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		32.0f, 32.0f, 0.1f, enemyFrames1, 0.25f, md3dDevice, 5.0f);
@@ -479,7 +470,6 @@ bool Game::Init(ID3D11Device* md3dDevice)
 	mEnemy6 = new Enemy(XMVectorSet(200.0f, 200.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		32.0f, 32.0f, 0.1f, enemyFrames6, 0.25f, md3dDevice, 5.0f);
 	enemies.push_back(mEnemy6);
-
 	//enemy health bars
 	for (int i = 0; i < enemies.size(); ++i)
 	{
@@ -500,7 +490,6 @@ bool Game::Init(ID3D11Device* md3dDevice)
 		96.0f, 16.0f, 1.0f, fbFrameG, 0.25f, md3dDevice, 0.0f);
 	mRedFuel = new Sprite(XMVectorSet(redXPosF, 698.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f),
 		96.0f, 16.0f, 1.0f, fbFrameR, 0.25f, md3dDevice, 0.0f);
-
 	//end of level object
 	EOLobj = new Sprite(XMVectorSet(512.0f, 720.0f, 0.0f, 0.0f), XMVectorSet(1.0f, 1.0f, 1.0f, 0.0f), //centre on x, 48 down trom top
 		32.0f, 32.0f, 1.0f, EOLobjFrames, 0.25f, md3dDevice, 0.0f);
@@ -750,49 +739,19 @@ void Game::BuildDSStates(ID3D11Device* md3dDevice)
 	HR(md3dDevice->CreateDepthStencilState(&dsDesc, &mFontDS));
 }
 
-void Game::BuildParticleVB(ID3D11Device* md3dDevice)
-{
-	std::vector<Vertex::ParticleVertex> vertices(MAX_PARTICLES);
-
-	D3D11_BUFFER_DESC vbd;
-	vbd.Usage = D3D11_USAGE_DYNAMIC;
-	vbd.ByteWidth = sizeof(Vertex::ParticleVertex) * MAX_PARTICLES;
-	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	vbd.MiscFlags = 0;
-	D3D11_SUBRESOURCE_DATA vinitData;
-	vinitData.pSysMem = &vertices[0];
-	HR(md3dDevice->CreateBuffer(&vbd, &vinitData, &mParticleVB));
-}
-
-void Game::UpdateParticleVB(ID3D11DeviceContext* md3dImmediateContext)
-{
-	D3D11_MAPPED_SUBRESOURCE mappedData;
-	HR(md3dImmediateContext->Map(mParticleVB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData));
-	Vertex::ParticleVertex* v = reinterpret_cast<Vertex::ParticleVertex*> (mappedData.pData);
-
-	for (UINT i = 0; i < mParticles.size(); ++i)
-	{
-		v[i].pos = mParticles[i].pos;
-		v[i].size = mParticles[i].size;
-	}
-
-	md3dImmediateContext->Unmap(mParticleVB, 0);
-}
-
 //between enemies and BBs (player and environment)
 void Game::SpriteRectCollision(Sprite* sprite, BoundingBoxes::BoundingBox bb)
 {
 	float r1CentreX = sprite->GetPos().m128_f32[0] + sprite->GetWidth() / 2;
-	float r1CentreY = sprite->GetPos().m128_f32[1] + sprite->GetHeight() / 2;
-
+	float r1CentreY = sprite->GetPos().m128_f32[1] + /*sprite->GetHeight() / 2*/(30 / 2);  //30 is enemy(BB) height
+	
 	float r2CentreX = bb.pos.x + bb.width / 2;
 	float r2CentreY = bb.pos.y + bb.height / 2;
 
 	float diffX = r1CentreX - r2CentreX;
 	float diffY = r1CentreY - r2CentreY;
 	float halfWidths = (sprite->GetWidth() + bb.width) / 2;
-	float halfHeights = (sprite->GetHeight() + bb.height) / 2;
+	float halfHeights = (/*sprite->GetHeight()*/30 + bb.height) / 2;  //30 is enemy(BB) height
 
 	float overlapX = halfWidths - abs(diffX);
 	float overlapY = halfHeights - abs(diffY);
@@ -883,7 +842,7 @@ Game::CollisionSide Game::RectRectCollision(BoundingBoxes::BoundingBox r1, Bound
 bool Game::EnemyProjCollision(Sprite* sprite, Projectile* arrow)
 {
 	float r1CentreX = sprite->GetPos().m128_f32[0] + sprite->GetWidth() / 2;
-	float r1CentreY = sprite->GetPos().m128_f32[1] + sprite->GetHeight() / 2;
+	float r1CentreY = sprite->GetPos().m128_f32[1] + /*sprite->GetHeight() / 2*/ (30 / 2);  //30 is enemy(BB) height
 
 	float p1CentreX = arrow->GetPos().m128_f32[0] + arrow->GetProjWidth() / 2;
 	float p1CentreY = arrow->GetPos().m128_f32[1] + arrow->GetProjHeight() / 2;
@@ -891,7 +850,7 @@ bool Game::EnemyProjCollision(Sprite* sprite, Projectile* arrow)
 	float diffX = r1CentreX - p1CentreX;
 	float diffY = r1CentreY - p1CentreY;
 	float halfWidths = (sprite->GetWidth() + arrow->GetProjWidth()) / 2;
-	float halfHeights = (sprite->GetHeight() + arrow->GetProjHeight()) / 2;
+	float halfHeights = (/*sprite->GetHeight()*/30 + arrow->GetProjHeight()) / 2;  //30 is enemy(BB) height
 
 	float overlapX = halfWidths - abs(diffX);
 	float overlapY = halfHeights - abs(diffY);
@@ -968,19 +927,19 @@ void Game::UpdateScene(ID3D11DeviceContext* md3dImmediateContext, ID3D11Device* 
 
 	m2DCam->Update();
 
-	//update particles
-	for (int i = 0; i < mParticles.size(); ++i)
-	{
-		XMVECTOR vel = XMLoadFloat3(&mParticles[i].vel);
-		XMVECTOR pos = XMLoadFloat3(&mParticles[i].pos);
-		pos = pos + vel;
-		XMStoreFloat3(&mParticles[i].pos, pos);
-	}
-	UpdateParticleVB(md3dImmediateContext);
-
 	//update player
 	mPlayer->Update(dt);
 	mPlayer->AddForce(XMVectorSet(0.0f, -9.8f, 0.0f, 0.0f));   //adds gravity
+	//update jetpack flame
+	if (isFacingRight)
+	{
+		mFlame->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] - 5, mPlayer->GetPos().m128_f32[1] - 16, 0.0f, 0.0f));
+	}
+	else if (!isFacingRight)
+	{
+		mFlame->SetPos(XMVectorSet(mPlayer->GetPos().m128_f32[0] + 5, mPlayer->GetPos().m128_f32[1] - 16, 0.0f, 0.0f));
+	}
+	mFlame->Update(dt);
 	//update enemy damage done to player
 	for (int i = 0; i < enemies.size(); ++i)
 	{
@@ -1142,6 +1101,12 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 	}
 	mPlayer->Draw(vp, md3dImmediateContext, mLitTexEffect);
 
+	if (drawFlame)
+	{
+		mFlame->Draw(vp, md3dImmediateContext, mLitTexEffect);
+		drawFlame = false;
+	}
+
 	//draw player health bar
 	mGreenHBarP->Draw(vp, md3dImmediateContext, mLitTexEffect);
 	mRedHBarP->Draw(vp, md3dImmediateContext, mLitTexEffect);
@@ -1174,13 +1139,11 @@ void Game::DrawScene(ID3D11DeviceContext* md3dImmediateContext, CXMMATRIX vp, ID
 		mProjectiles[i]->Draw(vp, md3dImmediateContext, mLitTexEffect);
 	}
 
-	if (controlsTimer <= 5.0f)
+	if (controlsTimer <= 7.0f)
 	{
 		//draw controls font image
 		mControlsFont->Draw(vp, md3dImmediateContext, mLitTexEffect);
 	}
-
-	DrawParticles(md3dImmediateContext);
 
 	md3dImmediateContext->OMSetDepthStencilState(0, 0);
 	md3dImmediateContext->OMSetBlendState(0, blendFactor, 0xffffffff);
@@ -1190,18 +1153,6 @@ void Game::OnMouseDown(HWND mhMainWnd, WPARAM btnState, int x, int y)
 {
 	mLastMousePos.x = x;
 	mLastMousePos.y = y;
-
-	//left mouse button will eventually be used for menu selections not particles
-	if ((btnState & MK_LBUTTON) != 0)
-	{
-		JetpackParticle newParticle;
-		XMStoreFloat3(&newParticle.pos, mPlayer->GetPos() + XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
-		//XMStoreFloat3(&newParticle.vel, mTestPlayer->GetLook() * 0.1f);
-		XMStoreFloat3(&newParticle.vel, XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f) * 0.1f);
-		newParticle.size.x = 1.0f;
-		newParticle.size.y = 1.0f;
-		mParticles.push_back(newParticle);
-	}
 
 	SetCapture(mhMainWnd);
 }
@@ -1245,11 +1196,14 @@ void Game::UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt)
 	if (GetAsyncKeyState(VK_UP) & 0x8000)
 	{
 		//can't jump while jetpack in use
-		//if (!GetAsyncKeyState(VK_LCONTROL) & 0x8000 || !GetAsyncKeyState(VK_RCONTROL) & 0x8000)
-		//{
-			//jump
-			mPlayer->Jump();
-		//}
+		if ((GetAsyncKeyState(VK_LCONTROL) & 0x8000) == 0)
+		{
+			if ((GetAsyncKeyState(VK_RCONTROL) & 0x8000) == 0)
+			{
+				//jump
+				mPlayer->Jump();
+			}
+		}
 	}
 	if (GetAsyncKeyState(VK_LCONTROL) & 0x8000 || GetAsyncKeyState(VK_RCONTROL) & 0x8000)
 	{
@@ -1279,6 +1233,7 @@ void Game::UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt)
 		{
 			canUseJetpack = false;
 		}
+		drawFlame = true;
 	}
 	if (GetAsyncKeyState(VK_SPACE) & 0x8000)
 	{
@@ -1310,39 +1265,4 @@ void Game::UpdateKeyboardInput(ID3D11Device* md3dDevice, float dt)
 			}
 		}
 	}
-}
-
-void Game::DrawParticles(ID3D11DeviceContext* md3dImmediateContext)
-{
-	XMVECTOR eyePos = m2DCam->GetPos();
-	XMMATRIX proj = XMLoadFloat4x4(&mProj);
-	XMMATRIX view = m2DCam->GetView();
-
-	XMMATRIX vp = view * proj;
-
-	mParticleEffect->SetPerFrameParams(eyePos);
-	mParticleEffect->SetPerObjectParams(vp, mParticleTexture);
-
-	md3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-	md3dImmediateContext->IASetInputLayout(Vertex::GetParticleVertLayout());
-
-	UINT stride = sizeof(Vertex::ParticleVertex);
-	UINT offset = 0;
-
-	md3dImmediateContext->IASetVertexBuffers(0, 1, &mParticleVB, &stride, &offset);
-
-	md3dImmediateContext->OMSetDepthStencilState(mNoDepthDS, 0);
-	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	md3dImmediateContext->OMSetBlendState(mAdditiveBS, blendFactor, 0xffffffff);
-
-	D3DX11_TECHNIQUE_DESC techDesc;
-	mParticleEffect->GetTech()->GetDesc(&techDesc);
-	for (UINT p = 0; p < techDesc.Passes; ++p)
-	{
-		mParticleEffect->GetTech()->GetPassByIndex(p)->Apply(0, md3dImmediateContext);
-		md3dImmediateContext->Draw(mParticles.size(), 0);
-	}
-
-	md3dImmediateContext->OMSetBlendState(0, blendFactor, 0xffffffff);
-	md3dImmediateContext->OMSetDepthStencilState(NULL, 0);
 }
